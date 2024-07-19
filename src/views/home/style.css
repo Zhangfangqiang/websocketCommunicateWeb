@@ -1,0 +1,45 @@
+.zf-home-page {
+  padding-left: 10px;
+  padding-right: 10px;
+}
+.zf-home-page .zf-header {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  align-items: center;
+}
+.zf-home-page .zf-header h1 {
+  color: #333333;
+  font-size: 24px;
+}
+.zf-home-page .zf-header svg {
+  font-size: 24px;
+}
+.zf-home-page .zf-navigation {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px !important;
+}
+.zf-home-page .zf-navigation > div {
+  width: 25%;
+  margin: 0px;
+}
+.zf-home-page .zf-navigation > div > button {
+  width: 100%;
+}
+.zf-home-page .adm-calendar-title {
+  display: none;
+}
+.zf-home-page .zf-statistical h2 {
+  text-align: center;
+}
+.zf-home-page .zf-statistical .adm-grid-item > div {
+  text-align: center;
+}
+.zf-home-page .adm-calendar-cell.adm-calendar-cell-selected.adm-calendar-cell.adm-calendar-cell-selected {
+  background: green;
+}
+
+/*# sourceMappingURL=style.css.map */

@@ -34,14 +34,14 @@ export function postSignupEmailExist (params:PostSignupEmailExistParamsInterface
 /**
  * 手机号注册
  */
-interface postSignupUsingPhoneParamsInterface {
+interface PostSignupUsingPhoneParamsInterface {
   name: string;
   password: string;
   password_confirm: string;
   verify_code: string;
   phone: string;
 }
-export function postSignupUsingPhone(params:postSignupUsingPhoneParamsInterface){
+export function postSignupUsingPhone(params:PostSignupUsingPhoneParamsInterface){
   console.log('postSignupUsingPhone:params', params)
   return Request.post({
     url: `/auth/signup/using-phone`,
@@ -52,14 +52,14 @@ export function postSignupUsingPhone(params:postSignupUsingPhoneParamsInterface)
 /**
  * 邮箱注册
  */
-interface postSignupUsingEmailParamsInterface {
+export interface PostSignupUsingEmailParamsInterface {
   name: string;
   password: string;
   password_confirm: string;
   verify_code: string;
   email: string;
 }
-export function postSignupUsingEmail(params:postSignupUsingEmailParamsInterface){
+export function postSignupUsingEmail(params:PostSignupUsingEmailParamsInterface){
   console.log('postSignupUsingEmail:params', params)
   return Request.post({
     url: `/auth/signup/using-email`,

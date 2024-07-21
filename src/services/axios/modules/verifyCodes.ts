@@ -29,7 +29,7 @@ export function postVerifyCodesPhone(params: PostVerifyCodesPhoneParamsInterface
 /**
  * 获取邮箱验证码
  */
-interface PostVerifyCodesEmailParamsInterface {
+export interface PostVerifyCodesEmailParamsInterface {
   email: string;
   captcha_id: string;
   captcha_answer: string;

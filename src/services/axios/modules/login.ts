@@ -28,7 +28,7 @@ export function postLoginUsingPassword(params:PostLoginUsingPasswordParamsInterf
   console.log('postLoginUsingPassword:params', params)
   return Request.post({
     url: `/auth/login/using-password`,
-    data: params
+    data: JSON.stringify(params)
   })
 }
 

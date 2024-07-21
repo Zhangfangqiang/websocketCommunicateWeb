@@ -10,7 +10,7 @@ class Request {
       baseURL,
       timeout,
       headers: {
-        'Content-Type': 'text/plain', // 设置默认请求头为 text/plain
+        'Content-Type': 'application/json', // 设置默认请求头为 text/plain
       },
     })
     this.instance.interceptors.response.use((res) => {

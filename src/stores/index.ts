@@ -1,10 +1,12 @@
 import {useDispatch} from "react-redux";
+import userReducer from "./modules/user"
 import {configureStore} from "@reduxjs/toolkit"
 import verifyCodesReducer from "./modules/verifyCodes"
 
 
 const store = configureStore({
   reducer: {
+    user: userReducer,
     verifyCodes: verifyCodesReducer,
   }
 })

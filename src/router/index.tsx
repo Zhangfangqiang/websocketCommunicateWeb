@@ -1,6 +1,7 @@
 import Home from "@/views/home"
 import Login from "@/views/auth/login"
 import Signup from "@/views/auth/signup"
+import {RequireAuth} from "@/router/require-auth";
 
 const routes = [
   {
@@ -8,11 +9,11 @@ const routes = [
     element: <Home/>
   }, {
     path: "/login",
-    element: <Login/>
+    element: <RequireAuth><Login/></RequireAuth>
   },
   {
     path: "/signup",
-    element: <Signup/>
+    element: <RequireAuth><Signup/></RequireAuth>
   }
 ]
 

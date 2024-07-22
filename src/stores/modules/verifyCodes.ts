@@ -7,7 +7,6 @@ export interface initialStateInterface {
     "captcha_id": string,
     "captcha_image": string
   }
-
 }
 
 
@@ -17,16 +16,6 @@ const initialState: initialStateInterface = {
     captcha_image: ""
   }
 }
-
-/**
- * 获取图片验证码并修改
- */
-export const postVerifyCodesCaptchaThunk = createAsyncThunk("postVerifyCodesCaptchaThunk", (payload, {dispatch}) => {
-  postVerifyCodesCaptcha().then((res)=>{
-    dispatch(changeVerifyCodesCaptchaAction(res))
-  })
-})
-
 
 /**
  * 修改内容的东西

@@ -1,5 +1,8 @@
-import axios, {AxiosRequestConfig} from "axios"
 import {BASE_URL, TIMEOUT} from "./config"
+import axios, {AxiosRequestConfig} from "axios"
+import ls from "@/utils/localStorage"
+
+
 
 class Request {
 
@@ -10,13 +13,41 @@ class Request {
       baseURL,
       timeout,
       headers: {
+        'Authorization': `Bearer ${ls.getItem("userInfo")?.token}`,
         'Content-Type': 'application/json', // 设置默认请求头为 text/plain
       },
     })
+
     this.instance.interceptors.response.use((res) => {
       return res.data
     }, err => {
-      return Promise.reject(err)
+      // 你可以根据不同的状态码处理错误
+      if (err.response) {
+        switch (err.response.status) {
+          case 400:
+            console.error('Bad Request:', err.response.data);
+            break;
+          case 401:
+            console.error('Unauthorized:', err.response.data);
+            break;
+          case 403:
+            console.error('Forbidden:', err.response.data);
+            break;
+          case 404:
+            console.error('Not Found:', err.response.data);
+            break;
+          case 500:
+            console.error('Internal Server Error:', err.response.data);
+            break;
+          default:
+            console.error('An error occurred:', err.response.data);
+        }
+      } else {
+        // 网络错误或其他未知错误
+        console.error('Network or unknown error:', err.message);
+      }
+
+      return Promise.reject(err);
     })
   }
 

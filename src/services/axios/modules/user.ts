@@ -20,7 +20,7 @@ interface getUsersParamsInterface {
   per_page: string
   name: string        //搜索用户名
 }
-export function getUsers(params: getUsersParamsInterface) {
+export function getUsers(params?: getUsersParamsInterface) {
   // 使用 qs.stringify 将参数转换为查询字符串
   const queryString = qs.stringify(params);
   return Request.get({

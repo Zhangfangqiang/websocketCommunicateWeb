@@ -1,49 +1,87 @@
 import "./style.scss"
-import {memo, useState} from 'react'
+import Chat from "./chat"
+import Friends from "./friends"
+import {Flex, Menu} from 'antd';
 import {withRouter} from "@/hoc"
-import { Menu } from 'antd';
-import type { MenuProps } from 'antd';
-import { AppstoreOutlined, MailOutlined, SettingOutlined } from '@ant-design/icons';
-
-
-type MenuItem = Required<MenuProps>['items'][number];
+import classNames from 'classnames';
+import {useAppDispatch} from "@/stores";
+import {getUserFriends} from "@/services";
+import useUserData from "@/hooks/useUserData";
+import {memo, useEffect, useState} from 'react'
+import {changeFriendsAction, changeSelectMenuKeyAction} from "@/stores/modules/user";
 
 const Index = memo((props: { router: any }) => {
 
+  const appDispatch = useAppDispatch()
+  const {userMenu, selectMenuKey, friends} = useUserData()
   const [collapsed, setCollapsed] = useState(true);
-  const items: MenuItem[] = [
-    {
-      key: 'sub1',
-      label: '好友',
-      icon: <MailOutlined/>,
-    },
-    {
-      key: 'sub1',
-      label: '群聊',
-      icon: <MailOutlined/>,
-    },
-  ]
 
 
+  interface DataType {
+    gender: string;
+    name: {
+      title: string;
+      first: string;
+      last: string;
+    };
+    email: string;
+    picture: {
+      large: string;
+      medium: string;
+      thumbnail: string;
+    };
+    nat: string;
+  }
+
+  const [data, setData] = useState<DataType[]>([]);
 
 
+  useEffect(() => {
+
+    getUserFriends().then(res => {
+      appDispatch(changeFriendsAction(res.data))
+    })
+
+  }, []);
 
 
   return (
     <div className="zf-home-page">
+      <Flex>
+        <Menu
+          className={classNames({
+            'zf-menu-expand': !collapsed,
+            'zf-menu-recoil': collapsed,
+          })}
+          inlineCollapsed={collapsed}
+          onClick={(e) => {
+            appDispatch(changeSelectMenuKeyAction(e.key))
+            switch (e.key) {
+              case '10':
+                setCollapsed(!collapsed);
+                break
+              case '11':
+                console.log("退出登录")
+                break
+            }
+          }}
+          defaultSelectedKeys={[selectMenuKey]}
+          mode="inline"
+          items={userMenu}
+          style={{height: "100vh"}}
+        />
+
+        {/*好友列表开始*/}
+        <Friends></Friends>
+        {/*好友列表结束*/}
 
 
-      <Menu
-        inlineCollapsed={collapsed}
-        onClick={() => {
-          setCollapsed(!collapsed);
-        }}
-        defaultSelectedKeys={['1']}
-        defaultOpenKeys={['sub1']}
-        mode="inline"
-        items={items}
-      />
+        {/*聊天窗口开始*/}
+        <Chat></Chat>
+        {/*聊天窗口结束*/}
 
+
+      </Flex>
 
     </div>
   );

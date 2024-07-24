@@ -8,7 +8,7 @@ interface getUserFriendsParamsInterface {
   order: string
   per_page: string
 }
-export function getUserFriends(params: getUserFriendsParamsInterface) {
+export function getUserFriends(params?: getUserFriendsParamsInterface) {
   return Request.get({
     url: `/user_friends`,
     data: params

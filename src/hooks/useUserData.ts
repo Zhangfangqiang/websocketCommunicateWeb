@@ -9,7 +9,10 @@ const useUserData = () => {
     selectMenuKey: state.user.selectMenuKey,
     chooseUser: state.user.chooseUser,
     messageList: state.user.messageList,
+    media: state.user.media,
+    fromUserUuid: state.user.fromUserUuid,
 
+    peer: state.user.peer,
 
     onlineType: state.user.onlineType
   }), shallowEqual)

@@ -1,5 +1,4 @@
 import "./style.scss"
-import Chat from "./chat"
 import Friends from "./friends"
 import {Flex, Menu} from 'antd';
 import {withRouter} from "@/hoc"
@@ -9,6 +8,7 @@ import {getUserFriends} from "@/services";
 import useUserData from "@/hooks/useUserData";
 import {memo, useEffect, useState} from 'react'
 import {changeFriendsAction, changeSelectMenuKeyAction} from "@/stores/modules/user";
+import Chat from "@/views/home/chat";
 
 const Index = memo((props: { router: any }) => {
 

@@ -1,20 +1,30 @@
-import {memo} from 'react'
+import {memo, useEffect} from 'react'
 import moment from 'moment';
 import {message} from "antd";
 import {withRouter} from "@/hoc"
 import protobuf from './proto/proto'
 import {useAppDispatch} from "@/stores";
 import useUserData from "@/hooks/useUserData";
-import {BASE_URL} from "@/services/axios/config"
+import {BASE_URL,WS_BASE_URL} from "@/services/axios/config"
 import * as Constant from '@/common/constant/Constant'
-import {changeSocketAction} from "@/stores/modules/user";
+import {
+  changeCallNameAction,
+  changeCurrentScreenAction, changeFromUserUuidAction, changeMediaAction,
+  changeMessageListAction,
+  changeOnlineTypeAction,
+  changeSocketAction,
+  changeVideoCallModalAction
+} from "@/stores/modules/user";
 import {FileOutlined} from "@ant-design/icons";
 
 
 const Index = memo((props: { router: any }) => {
   const appDispatch = useAppDispatch()
-  const {onlineType,chooseUser,messageList} = useUserData()
+  const {onlineType, chooseUser, messageList, media, fromUserUuid} = useUserData()
 
+  useEffect(()=>{
+    connection()
+  },[])
 
   var peer: any = null;
   var socket: any = null;
@@ -75,7 +85,7 @@ const Index = memo((props: { router: any }) => {
    */
   const connection = () => {
     peer = new RTCPeerConnection();
-    socket = new WebSocket("ws://" + BASE_URL + "/v1/socket.io?user=" + "uuid")
+    socket = new WebSocket(WS_BASE_URL + "/socket.io?user=" + "uuid")
     let image = document.getElementById('receiver');
 
     /**
@@ -109,7 +119,7 @@ const Index = memo((props: { router: any }) => {
 
         /*处理 WebRTC 消息 | 接受语音电话或者视频电话 webrtc*/
         if (messagePB.type === Constant.MESSAGE_TRANS_TYPE) {
-          dealWebRtcMessage(messagePB);
+          // dealWebRtcMessage(messagePB);
           return;
         }
 
@@ -141,7 +151,8 @@ const Index = memo((props: { router: any }) => {
 
         // 文件内容，录制的视频，语音内容
         let content = getContentByType(messagePB.contentType, messagePB.url, messagePB.content)
-        this.props.setMessageList([
+
+        appDispatch(changeMessageListAction([
           ...messageList,
           {
             author: messagePB.fromUsername,
@@ -149,19 +160,19 @@ const Index = memo((props: { router: any }) => {
             content: <p>{content}</p>,
             datetime: moment().fromNow(),
           },
-        ]);
+        ]))
       })
 
 
     }
 
-    socket.onclose = (_message:CloseEvent) => {
+    socket.onclose = (_message: CloseEvent) => {
       console.log("close and reconnect-->--->")
 
       reconnect()
     }
 
-    socket.onerror = (_message:Event) => {
+    socket.onerror = (_message: Event) => {
       console.log("error----->>>>")
 
       reconnect()
@@ -205,7 +216,7 @@ const Index = memo((props: { router: any }) => {
    * 发送消息
    * @param {消息内容} messageData
    */
-  const sendMessage = (messageData) => {
+  const sendMessage = (messageData: any) => {
     let toUser = messageData.toUser;
     if (null == toUser) {
       toUser = chooseUser.toUser;
@@ -218,8 +229,28 @@ const Index = memo((props: { router: any }) => {
       to: toUser,
     }
     let message = protobuf.lookup("protocol.Message")
+    // @ts-ignore
     const messagePB = message.create(data)
+    // @ts-ignore
+    socket.send(message.encode(messagePB).finish())
+  }
 
+  const sendMessageRe = (messageData: any) => {
+    let toUser = messageData.toUser;
+    if (null == toUser) {
+      toUser = chooseUser.toUser;
+    }
+    let data = {
+      ...messageData,
+      messageType: 1, // 消息类型，1.单聊 2.群聊
+      fromUsername: "zhangf",
+      from: "12312312312",
+      to: "zfdfaw",
+    }
+    let message = protobuf.lookup("protocol.Message")
+    // @ts-ignore
+    const messagePB = message.create(data)
+    // @ts-ignore
     socket.send(message.encode(messagePB).finish())
   }
 
@@ -229,15 +260,15 @@ const Index = memo((props: { router: any }) => {
    * @param {文件地址} url
    * @returns
    */
-  const getContentByType = (type, url, content) => {
+  const getContentByType = (type: number, url: string, content: any) => {
     if (type === 2) {
-      content = <FileOutlined style={{ fontSize: 38 }} />
+      content = <FileOutlined style={{fontSize: 38}}/>
     } else if (type === 3) {
-      content = <img src={BASE_URL + "/file/" + url} alt="" width="150px" />
+      content = <img src={BASE_URL + "/file/" + url} alt="" width="150px"/>
     } else if (type === 4) {
-      content = <audio src={BASE_URL + "/file/" + url} controls autoPlay={false} preload="auto" />
+      content = <audio src={BASE_URL + "/file/" + url} controls autoPlay={false} preload="auto"/>
     } else if (type === 5) {
-      content = <video src={BASE_URL + "/file/" + url} controls autoPlay={false} preload="auto" width='200px' />
+      content = <video src={BASE_URL + "/file/" + url} controls autoPlay={false} preload="auto" width='200px'/>
     }
 
     return content;
@@ -252,7 +283,7 @@ const Index = memo((props: { router: any }) => {
      * 对等方收到ice信息后，通过调用 addIceCandidate 将接收的候选者信息传递给浏览器的ICE代理。
      * @param {候选人信息} e
      */
-    peer.onicecandidate = (e) => {
+/*    peer.onicecandidate = (e: any) => {
       if (e.candidate) {
         // rtcType参数默认是对端值为answer，如果是发起端，会将值设置为offer
         let candidate = {
@@ -265,13 +296,13 @@ const Index = memo((props: { router: any }) => {
         }
         sendMessage(message);
       }
-    };
+    };*/
 
     /**
      * 当连接成功后，从里面获取语音视频流
      * @param {包含语音视频流} e
      */
-    peer.ontrack = (e: any) => {
+/*    peer.ontrack = (e: any) => {
       if (e && e.streams) {
         if (onlineType === 1) {
           let remoteVideo = document.getElementById("remoteVideoReceiver");
@@ -283,87 +314,87 @@ const Index = memo((props: { router: any }) => {
           remoteAudio.srcObject = e.streams[0];
         }
       }
-    };
+    };*/
   }
 
   /**
    * 停止视频电话,屏幕共享
    */
   const stopVideoOnline = () => {
-    this.setState({
-      isRecord: false
-    })
+    // this.setState({
+    //   isRecord: false
+    // })
+
 
     let localVideoReceiver = document.getElementById("localVideoReceiver");
+    // @ts-ignore
     if (localVideoReceiver && localVideoReceiver.srcObject && localVideoReceiver.srcObject.getTracks()) {
+      // @ts-ignore
       localVideoReceiver.srcObject.getTracks().forEach((track) => track.stop());
     }
 
     let preview = document.getElementById("preview");
+    // @ts-ignore
     if (preview && preview.srcObject && preview.srcObject.getTracks()) {
+      // @ts-ignore
       preview.srcObject.getTracks().forEach((track) => track.stop());
     }
 
     let audioPhone = document.getElementById("audioPhone");
+    // @ts-ignore
     if (audioPhone && audioPhone.srcObject && audioPhone.srcObject.getTracks()) {
+      // @ts-ignore
       audioPhone.srcObject.getTracks().forEach((track) => track.stop());
     }
 
     // 停止视频或者屏幕共享时，将画布最小
-    let currentScreen = {
-      width: 0,
-      height: 0
-    }
-    this.setState({
-      currentScreen: currentScreen
-    })
+    appDispatch(changeCurrentScreenAction({width: 0, height: 0}))
   }
 
   /**
    * 显示视频或者音频的面板
    */
   const mediaPanelDrawerOnClose = () => {
-    let media = {
-      ...this.props.media,
-      showMediaPanel: false,
-    }
-    this.props.setMedia(media)
+    appDispatch(changeMediaAction(
+        {
+          media,
+          showMediaPanel: false,
+        }
+    ))
   }
 
   /**
    * 如果接收到的消息不是正在聊天的消息，显示未读提醒
-   * @param {发送给对应人员的uuid} toUuid
    */
-  const showUnreadMessageDot = (toUuid) => {
-    let userList = this.props.userList;
-    for (var index in userList) {
-      if (userList[index].uuid === toUuid) {
-        userList[index].hasUnreadMessage = true;
-        this.props.setUserList(userList);
-        break;
-      }
-    }
+  const showUnreadMessageDot = (toUuid:string) => {
+    // let userList = this.props.userList;
+    // for (var index in userList) {
+    //   if (userList[index].uuid === toUuid) {
+    //     userList[index].hasUnreadMessage = true;
+    //     this.props.setUserList(userList);
+    //     break;
+    //   }
+    // }
   }
 
   /**
    * 接听电话后，发送接听确认消息，显示媒体面板
    */
   const handleOk = () => {
-    this.setState({
-      videoCallModal: false,
-    })
+    appDispatch(changeVideoCallModalAction(false))
+
     let data = {
       contentType: Constant.ACCEPT_VIDEO_ONLINE,
       type: Constant.MESSAGE_TRANS_TYPE,
-      toUser: this.state.fromUserUuid,
+      toUser: fromUserUuid,
     }
     sendMessage(data);
 
-    let media = {
-      ...this.props.media,
+
+    appDispatch(changeMediaAction({
+      ...media,
       showMediaPanel: true,
-    }
-    this.props.setMedia(media)
+    }))
   }
 
   /**
@@ -375,47 +406,42 @@ const Index = memo((props: { router: any }) => {
       type: Constant.MESSAGE_TRANS_TYPE,
     }
     sendMessage(data);
-    this.setState({
-      videoCallModal: false,
-    })
+
+    appDispatch(changeVideoCallModalAction(false))
   }
 
   /**
    * 交易媒体电话
    * @param message
    */
-  const dealMediaCall = (message) => {
+  const dealMediaCall = (message:any) => {
     if (message.contentType === Constant.DIAL_AUDIO_ONLINE || message.contentType === Constant.DIAL_VIDEO_ONLINE) {
-      this.setState({
-        videoCallModal: true,
-        callName: message.fromUsername,
-        fromUserUuid: message.from,
-      })
+      appDispatch(changeVideoCallModalAction(true))
+      appDispatch(changeCallNameAction(message.fromUsername))
+      appDispatch(changeFromUserUuidAction(message.from))
       return;
     }
 
     if (message.contentType === Constant.CANCELL_AUDIO_ONLINE || message.contentType === Constant.CANCELL_VIDEO_ONLINE) {
-      this.setState({
-        videoCallModal: false,
-      })
+      appDispatch(changeVideoCallModalAction(false))
       return;
     }
 
     if (message.contentType === Constant.REJECT_AUDIO_ONLINE || message.contentType === Constant.REJECT_VIDEO_ONLINE) {
-      let media = {
-        ...this.props.media,
+      appDispatch(changeMediaAction({
+        ...media,
         mediaReject: true,
-      }
-      this.props.setMedia(media);
+      }))
       return;
     }
 
     if (message.contentType === Constant.ACCEPT_VIDEO_ONLINE || message.contentType === Constant.ACCEPT_AUDIO_ONLINE) {
-      let media = {
-        ...this.props.media,
+      appDispatch(changeMediaAction({
+        ...media,
         mediaConnected: true,
-      }
-      this.props.setMedia(media);
+      }))
+      return;
+
     }
   }
 
@@ -423,7 +449,8 @@ const Index = memo((props: { router: any }) => {
    * 处理webrtc消息，包括获取请求方的offer，回应answer等
    * @param {消息内容}} messagePB
    */
-  const dealWebRtcMessage = (messagePB) => {
+/*
+  const dealWebRtcMessage = (messagePB: any) => {
     if (messagePB.contentType >= Constant.DIAL_MEDIA_START && messagePB.contentType <= Constant.DIAL_MEDIA_END) {
       dealMediaCall(messagePB);
       return;
@@ -432,36 +459,32 @@ const Index = memo((props: { router: any }) => {
 
     if (type === "answer") {
       const answerSdp = new RTCSessionDescription({type, sdp});
-      this.props.peer.localPeer.setRemoteDescription(answerSdp)
+      peer.localPeer.setRemoteDescription(answerSdp)
     } else if (type === "answer_ice") {
-      this.props.peer.localPeer.addIceCandidate(iceCandidate)
+      peer.localPeer.addIceCandidate(iceCandidate)
     } else if (type === "offer_ice") {
       peer.addIceCandidate(iceCandidate)
     } else if (type === "offer") {
       if (!checkMediaPermission()) {
         return;
       }
-      let preview :any
+      let preview: any
 
       let video = false;
       if (messagePB.contentType === Constant.VIDEO_ONLINE) {
         preview = document.getElementById("localVideoReceiver");
         video = true
-        this.setState({
-          onlineType: 1,
-        })
+        appDispatch(changeOnlineTypeAction(1))
       } else {
         preview = document.getElementById("audioPhone");
-        this.setState({
-          onlineType: 2,
-        })
+        appDispatch(changeOnlineTypeAction(1))
       }
 
       navigator.mediaDevices
-        .getUserMedia({
-          audio: true,
-          video: video,
-        }).then((stream) => {
+          .getUserMedia({
+            audio: true,
+            video: video,
+          }).then((stream) => {
         preview.srcObject = stream;
         stream.getTracks().forEach(track => {
           peer.addTrack(track, stream);
@@ -470,27 +493,28 @@ const Index = memo((props: { router: any }) => {
         // 一定注意：需要将该动作，放在这里面，即流获取成功后，再进行answer创建。不然不能获取到流，从而不能播放视频。
         const offerSdp = new RTCSessionDescription({type, sdp});
         peer.setRemoteDescription(offerSdp)
-          .then(() => {
-            peer.createAnswer().then(answer => {
-              peer.setLocalDescription(answer)
+            .then(() => {
+              peer.createAnswer().then(answer => {
+                peer.setLocalDescription(answer)
 
-              let message = {
-                content: JSON.stringify(answer),
-                type: Constant.MESSAGE_TRANS_TYPE,
-                messageType: messagePB.contentType
-              }
-              sendMessage(message);
-            })
-          });
+                let message = {
+                  content: JSON.stringify(answer),
+                  type: Constant.MESSAGE_TRANS_TYPE,
+                  messageType: messagePB.contentType
+                }
+                sendMessage(message);
+              })
+            });
       });
     }
   }
+*/
 
 
   return (
-    <div className="zf-chat">
+      <div className="zf-chat">
 
-    </div>
+      </div>
   );
 });
 

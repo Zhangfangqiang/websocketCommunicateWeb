@@ -57,12 +57,25 @@ export interface initialStateInterface {
     "created_at": string,
     "updated_at": string,
     "deleted_at": string
-  }[] | []
-
-
-  chooseUser:any,
-  messageList:any[],
-  socket:any,
+  }[] | []    //好友列表
+  chooseUser: {
+    toUser: string,       //接收方uuid
+    toUsername: string,   //接收方用户名
+    messageType: number,  //消息类型，1.单聊 2.群聊
+    avatar: string,       //接收方的头像
+  },
+  messageList: any[],
+  socket: any,
+  media: {
+    isRecord: boolean,
+    showMediaPanel: boolean,
+    mediaConnected: boolean,
+    mediaReject: boolean,
+  },
+  peer: {
+    localPeer: any,  // WebRTC peer 发起端
+    remotePeer: any, // WebRTC peer 接收端
+  }
   onlineType: number, // 在线视频或者音频： 1视频，2音频
   currentScreen: {
     height: number,
@@ -70,6 +83,10 @@ export interface initialStateInterface {
   },
   callName: string,
   fromUserUuid: string,
+  videoCallModal:boolean
+
+
+
 }
 
 
@@ -104,20 +121,32 @@ const initialState: initialStateInterface = {
   ],
   selectMenuKey: '2',
   friends: [],
-
-
-
-  chooseUser:{},
-  messageList:[],
-
-  socket:{},
-  onlineType:1,
+  chooseUser: {
+    toUser: '',
+    toUsername: '',
+    messageType: 1,
+    avatar: '',
+  },
+  messageList: [],
+  socket: {},
+  media: {
+    isRecord: false,
+    showMediaPanel: false,
+    mediaConnected: false,
+    mediaReject: false,
+  },
+  peer: {
+    localPeer: null,  // WebRTC peer 发起端
+    remotePeer: null, // WebRTC peer 接收端
+  },
+  onlineType: 1,
   currentScreen: {
     height: 540,
     width: 400
   },
   callName: '',
   fromUserUuid: '',
+  videoCallModal:false
 }
 
 /**
@@ -127,37 +156,59 @@ const ActivationCodeSlice = createSlice({
   name: "verifyCodes",
   initialState,
   reducers: {
+    changeCallNameAction(state, {payload}) {
+      state.callName = payload
+    },
+    changeFromUserUuidAction(state, {payload}) {
+      state.fromUserUuid = payload
+    },
     changeUserInfoAction(state, {payload}) {
-      ls.setItem("userInfo",payload)
+      ls.setItem("userInfo", payload)
       state.userInfo = payload
     },
-
-    changeSocketAction(state, {payload}){
+    changeCurrentScreenAction(state, {payload}) {
+      state.currentScreen = payload
+    },
+    changeSocketAction(state, {payload}) {
       state.socket = payload
     },
-    changeOnlineTypeAction(state, {payload}){
+    changeOnlineTypeAction(state, {payload}) {
       state.onlineType = payload
     },
-
+    changeMediaAction(state, {payload}){
+      state.media = payload
+    },
+    changeMessageListAction(state, {payload}) {
+      state.messageList = payload
+    },
     changeUserMenuAction(state, {payload}) {
       state.userMenu = payload
     },
     changeSelectMenuKeyAction(state, {payload}) {
       state.selectMenuKey = payload
     },
-    changeFriendsAction(state, {payload}){
+    changeFriendsAction(state, {payload}) {
       state.friends = payload
+    },
+    changeVideoCallModalAction(state, {payload}){
+      state.videoCallModal = payload
     }
   },
 })
 
 export const {
+  changeCallNameAction,
+changeFromUserUuidAction,
+  changeMediaAction,
+  changeCurrentScreenAction,
+  changeMessageListAction,
   changeUserInfoAction,
   changeSocketAction,
   changeFriendsAction,
   changeUserMenuAction,
   changeOnlineTypeAction,
-  changeSelectMenuKeyAction
+  changeSelectMenuKeyAction,
+changeVideoCallModalAction
 } = ActivationCodeSlice.actions
 
 export default ActivationCodeSlice.reducer

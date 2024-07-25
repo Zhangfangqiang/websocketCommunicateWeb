@@ -4,7 +4,7 @@ import {Avatar, Input, List} from 'antd';
 import {getUserFriends} from "@/services";
 import useUserData from "@/hooks/useUserData";
 import {memo, useEffect, useState} from 'react'
-import {changeFriendsAction} from "@/stores/modules/user";
+import {changeChooseUserAction, changeFriendsAction} from "@/stores/modules/user";
 import {SearchOutlined, UserOutlined} from "@ant-design/icons";
 
 const Index = memo((props: { router: any }) => {
@@ -36,7 +36,10 @@ const Index = memo((props: { router: any }) => {
       <List
         dataSource={userSearchName != "" ? friends.filter(item => item.friend.name.toLowerCase().includes(userSearchName.toLowerCase())) : friends}
         renderItem={(item) => (
-          <List.Item key={item.id}>
+          <List.Item key={item.id} onClick={()=>{
+            console.log(item.friend)
+            appDispatch(changeChooseUserAction(item.friend))
+          }}>
             <List.Item.Meta
               avatar={<Avatar src={item.friend.avatar}/>}
               title={item.friend.name}

@@ -1,8 +1,10 @@
 
 declare global {
   interface Window {
-    hmSend: any; // 或者根据实际情况指定正确的类型
+    socket: any;
+    peer:any;
   }
+
   interface Navigator {
     // getUserMedia?: (constraints: MediaStreamConstraints, successCallback: (stream: MediaStream) => void, errorCallback: (error: any) => void) => void;
     // webkitGetUserMedia?: (constraints: MediaStreamConstraints, successCallback: (stream: MediaStream) => void, errorCallback: (error: any) => void) => void;

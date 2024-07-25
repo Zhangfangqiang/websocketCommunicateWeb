@@ -1,5 +1,4 @@
 syntax = "proto3";
-package protocol;
 
 message Message {
     string avatar = 1;

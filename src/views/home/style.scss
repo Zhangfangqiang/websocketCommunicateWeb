@@ -10,12 +10,13 @@
   }
 
   .zf-friends {
-    width: 400px;
+    width: 300px;
     border-right: 1px solid #f0f0f0;
     height: 100vh;
     overflow-y: scroll;
     padding: 10px;
-    .ant-list-item-meta-description{
+
+    .ant-list-item-meta-description {
       width: 100%;
       word-break: keep-all;
       white-space: nowrap;
@@ -24,6 +25,21 @@
     }
   }
 
+  .zf-chat {
+    flex: 1;
+
+    .ant-list-item {
+      border: none !important;
+    }
+    .zf-reverse-list{
+      flex-direction:row-reverse;
+      text-align: right;
+      .ant-list-item-meta-avatar{
+        margin-left: 16px;
+        margin-right: 0;
+      }
+    }
+  }
 
 }
 

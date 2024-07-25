@@ -21,7 +21,7 @@ interface userInfoInterface {
 }
 
 export interface initialStateInterface {
-  userInfo: userInfoInterface | null
+  userInfo: userInfoInterface |null
   userMenu: {
     key: string,
     label: string,
@@ -59,10 +59,15 @@ export interface initialStateInterface {
     "deleted_at": string
   }[] | []    //好友列表
   chooseUser: {
-    toUser: string,       //接收方uuid
-    toUsername: string,   //接收方用户名
-    messageType: number,  //消息类型，1.单聊 2.群聊
-    avatar: string,       //接收方的头像
+    "id": number,
+    "uuid": string,
+    "city": string,
+    "introduction": string,
+    "avatar": string,
+    "name": string,
+    "created_at": string,
+    "updated_at": string,
+    "deleted_at": string
   },
   messageList: any[],
   socket: any,
@@ -91,7 +96,7 @@ export interface initialStateInterface {
 
 
 const initialState: initialStateInterface = {
-  userInfo: ls.getItem("userInfo"),
+  userInfo: ls.getItem("userInfo") as userInfoInterface,
   userMenu: [
     {
       key: '1',
@@ -122,10 +127,16 @@ const initialState: initialStateInterface = {
   selectMenuKey: '2',
   friends: [],
   chooseUser: {
-    toUser: '',
-    toUsername: '',
-    messageType: 1,
-    avatar: '',
+    // type 1 代表用户 type 2代表群 这里以后要加
+    "id": 0,
+    "uuid": "string",
+    "city": "string",
+    "introduction": "string",
+    "avatar": "string",
+    "name": "string",
+    "created_at": "string",
+    "updated_at": "string",
+    "deleted_at": "string"
   },
   messageList: [],
   socket: {},
@@ -192,6 +203,9 @@ const ActivationCodeSlice = createSlice({
     },
     changeVideoCallModalAction(state, {payload}){
       state.videoCallModal = payload
+    },
+    changeChooseUserAction(state, {payload}){
+      state.chooseUser = payload
     }
   },
 })
@@ -207,6 +221,7 @@ changeFromUserUuidAction,
   changeFriendsAction,
   changeUserMenuAction,
   changeOnlineTypeAction,
+  changeChooseUserAction,
   changeSelectMenuKeyAction,
 changeVideoCallModalAction
 } = ActivationCodeSlice.actions

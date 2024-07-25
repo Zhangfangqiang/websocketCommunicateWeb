@@ -1,33 +1,45 @@
-import {memo, useEffect} from 'react'
 import moment from 'moment';
-import {message} from "antd";
 import {withRouter} from "@/hoc"
-import protobuf from './proto/proto'
+import classNames from "classnames";
+import {memo, useEffect} from 'react'
 import {useAppDispatch} from "@/stores";
+import {Message} from "./proto/message"
 import useUserData from "@/hooks/useUserData";
-import {BASE_URL,WS_BASE_URL} from "@/services/axios/config"
+import {MoreOutlined} from "@ant-design/icons";
+import {getContentByType} from "@/utils/common";
 import * as Constant from '@/common/constant/Constant'
-import {
-  changeCallNameAction,
-  changeCurrentScreenAction, changeFromUserUuidAction, changeMediaAction,
-  changeMessageListAction,
-  changeOnlineTypeAction,
-  changeSocketAction,
-  changeVideoCallModalAction
-} from "@/stores/modules/user";
-import {FileOutlined} from "@ant-design/icons";
+import {BASE_URL, WS_BASE_URL} from "@/services/axios/config"
+import {changeMessageListAction} from "@/stores/modules/user";
+import InfiniteScroll from 'react-infinite-scroll-component';
+import {Avatar, Button, Card, Divider, Form, Input, List, Skeleton, Space} from "antd";
+import ChatFile from "@/views/home/chat/c-cpns/ChatFile";
 
 
 const Index = memo((props: { router: any }) => {
   const appDispatch = useAppDispatch()
-  const {onlineType, chooseUser, messageList, media, fromUserUuid} = useUserData()
+  const {chooseUser, messageList, userInfo} = useUserData()
 
-  useEffect(()=>{
+
+  useEffect(() => {
     connection()
-  },[])
 
-  var peer: any = null;
-  var socket: any = null;
+    /*    setInterval(()=>{
+          console.log("messagePB")
+          const messagePB = Message.create(
+            {
+              "content": "234234",
+              "contentType": 1,
+              "messageType": 1,
+              "fromUsername": "zf1860@qq.com",
+              "from": "d8e37262-3533-40f0-b45f-b57d1b1db82f",
+              "to": "c9c72dc7-bdca-46ac-b761-a5656554b1be"
+            }
+          )
+          socket.send(Message.encode(messagePB).finish())
+        },5000)*/
+
+  }, [])
+
   var lockConnection = false;
 
   /**
@@ -59,20 +71,19 @@ const Index = memo((props: { router: any }) => {
         }
 
         /*WebSocket 连接状态为 OPEN*/
-        if (socket.readyState === 1) {
-          let message = protobuf.lookup("protocol.Message")
+        // @ts-ignore
+        if (window.socket.readyState === 1) {
+          const messagePB = Message.create(data)
           // @ts-ignore
-          const messagePB = message.create(data)
-          // @ts-ignore
-          socket.send(message.encode(messagePB).finish())
+          window.socket.send(Message.encode(messagePB).finish())
         }
-
         // @ts-ignore
         self.serverTimeoutObj = setTimeout(function () {
           _num--
           if (_num <= 0) {
             console.log("the ping num is more then 3, close socket!")
-            socket.close();   // WebSocket 连接状态为 OPEN
+            // @ts-ignore
+            window.socket.close();   // WebSocket 连接状态为 OPEN
           }
         }, self.timeout);
       }, this.timeout)
@@ -84,34 +95,34 @@ const Index = memo((props: { router: any }) => {
    * websocket连接
    */
   const connection = () => {
-    peer = new RTCPeerConnection();
-    socket = new WebSocket(WS_BASE_URL + "/socket.io?user=" + "uuid")
+    // @ts-ignore
+    window.peer = new RTCPeerConnection();
+    // @ts-ignore
+    window.socket = new WebSocket(WS_BASE_URL + "/socket.io?user=" + "uuid")
+
     let image = document.getElementById('receiver');
 
     /**
      * 打开链接
      */
-    socket.onopen = () => {
+    // @ts-ignore
+    window.socket.onopen = () => {
       heartCheck.start()
-      webrtcConnection()
-      appDispatch(changeSocketAction(socket))
-      // this.props.setSocket(socket);  全局保存socket
     }
 
     /**
      * 监听webSocket的消息
      * @param message
      */
-    socket.onmessage = (message: MessageEvent) => {
+    // @ts-ignore
+    window.socket.onmessage = (message: MessageEvent) => {
       heartCheck.start()
-
-      let messageProto = protobuf.lookup("protocol.Message") //获取协议的 message 类型
       let reader = new FileReader();              //创建 FileReader 对象以读取二进制数据
       reader.readAsArrayBuffer(message.data);                //将收到的 blob 对象读取为 ArrayBuffer
 
       reader.onload = ((event: ProgressEvent<FileReader>) => {
         // @ts-ignore
-        let messagePB = messageProto.decode(new Uint8Array(event.target.result as ArrayBuffer))
+        const messagePB = Message.decode(new Uint8Array(event.target.result as ArrayBuffer));
 
         if (messagePB.type === "heatbeat") {
           return;
@@ -124,8 +135,8 @@ const Index = memo((props: { router: any }) => {
         }
 
         /*如果该消息不是正在聊天消息，显示未读提醒*/
-        if (chooseUser.toUser !== messagePB.from) {
-          showUnreadMessageDot(messagePB.from);
+        if (chooseUser.uuid !== messagePB.from) {
+          // showUnreadMessageDot(messagePB.from);
           return;
         }
 
@@ -157,7 +168,7 @@ const Index = memo((props: { router: any }) => {
           {
             author: messagePB.fromUsername,
             avatar: avatar,
-            content: <p>{content}</p>,
+            content: <p>1111</p>,
             datetime: moment().fromNow(),
           },
         ]))
@@ -166,15 +177,21 @@ const Index = memo((props: { router: any }) => {
 
     }
 
-    socket.onclose = (_message: CloseEvent) => {
+    /**
+     * 监听关闭重连
+     */
+    // @ts-ignore
+    window.socket.onclose = (_message: CloseEvent) => {
       console.log("close and reconnect-->--->")
-
       reconnect()
     }
 
-    socket.onerror = (_message: Event) => {
+    /**
+     * 监听错误重连
+     */
+    // @ts-ignore
+    window.socket.onerror = (_message: Event) => {
       console.log("error----->>>>")
-
       reconnect()
     }
   }
@@ -184,33 +201,20 @@ const Index = memo((props: { router: any }) => {
    */
   let reconnectTimeoutObj: any = null;
   const reconnect = () => {
-    if (lockConnection) return;
+    if (lockConnection) {
+      return
+    }
     lockConnection = true
-
     reconnectTimeoutObj && clearTimeout(reconnectTimeoutObj)
-
     reconnectTimeoutObj = setTimeout(() => {
-      if (socket.readyState !== 1) {
+      // @ts-ignore
+      if (window.socket.readyState !== 1) {
         connection()
       }
       lockConnection = false
     }, 10000)
   }
 
-  /**
-   * 检查媒体权限是否开启
-   * @returns 媒体权限是否开启
-   */
-  const checkMediaPermission = (): boolean => {
-    // @ts-ignore
-    navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-
-    if (!navigator || !navigator.mediaDevices) {
-      message.error("获取摄像头权限失败！")
-      return false;
-    }
-    return true;
-  };
 
   /**
    * 发送消息
@@ -218,303 +222,113 @@ const Index = memo((props: { router: any }) => {
    */
   const sendMessage = (messageData: any) => {
     let toUser = messageData.toUser;
+
     if (null == toUser) {
-      toUser = chooseUser.toUser;
+      toUser = chooseUser.uuid;
     }
+
     let data = {
       ...messageData,
-      messageType: chooseUser.messageType, // 消息类型，1.单聊 2.群聊
-      fromUsername: localStorage.username,
-      from: localStorage.uuid,
+      messageType: 1,               // 消息类型，1.单聊 2.群聊
+      fromUsername: userInfo?.data?.name,
+      from: userInfo?.data?.uuid,
       to: toUser,
     }
-    let message = protobuf.lookup("protocol.Message")
+
+    const messagePB = Message.create(data)
     // @ts-ignore
-    const messagePB = message.create(data)
+    console.log(window)
     // @ts-ignore
-    socket.send(message.encode(messagePB).finish())
-  }
-
-  const sendMessageRe = (messageData: any) => {
-    let toUser = messageData.toUser;
-    if (null == toUser) {
-      toUser = chooseUser.toUser;
-    }
-    let data = {
-      ...messageData,
-      messageType: 1, // 消息类型，1.单聊 2.群聊
-      fromUsername: "zhangf",
-      from: "12312312312",
-      to: "zfdfaw",
-    }
-    let message = protobuf.lookup("protocol.Message")
-    // @ts-ignore
-    const messagePB = message.create(data)
-    // @ts-ignore
-    socket.send(message.encode(messagePB).finish())
-  }
-
-  /**
-   * 根据文件类型渲染对应的标签，比如视频，图片等。
-   * @param {文件类型} type
-   * @param {文件地址} url
-   * @returns
-   */
-  const getContentByType = (type: number, url: string, content: any) => {
-    if (type === 2) {
-      content = <FileOutlined style={{fontSize: 38}}/>
-    } else if (type === 3) {
-      content = <img src={BASE_URL + "/file/" + url} alt="" width="150px"/>
-    } else if (type === 4) {
-      content = <audio src={BASE_URL + "/file/" + url} controls autoPlay={false} preload="auto"/>
-    } else if (type === 5) {
-      content = <video src={BASE_URL + "/file/" + url} controls autoPlay={false} preload="auto" width='200px'/>
-    }
-
-    return content;
+    window.socket.send(Message.encode(messagePB).finish())
   }
 
 
-  /**
-   * webrtc 绑定事件
-   */
-  const webrtcConnection = () => {
-    /**
-     * 对等方收到ice信息后，通过调用 addIceCandidate 将接收的候选者信息传递给浏览器的ICE代理。
-     * @param {候选人信息} e
-     */
-/*    peer.onicecandidate = (e: any) => {
-      if (e.candidate) {
-        // rtcType参数默认是对端值为answer，如果是发起端，会将值设置为offer
-        let candidate = {
-          type: 'answer_ice',
-          iceCandidate: e.candidate
-        }
-        let message = {
-          content: JSON.stringify(candidate),
-          type: Constant.MESSAGE_TRANS_TYPE,
-        }
-        sendMessage(message);
-      }
-    };*/
-
-    /**
-     * 当连接成功后，从里面获取语音视频流
-     * @param {包含语音视频流} e
-     */
-/*    peer.ontrack = (e: any) => {
-      if (e && e.streams) {
-        if (onlineType === 1) {
-          let remoteVideo = document.getElementById("remoteVideoReceiver");
-          // @ts-ignore
-          remoteVideo.srcObject = e.streams[0];
-        } else {
-          let remoteAudio = document.getElementById("audioPhone");
-          // @ts-ignore
-          remoteAudio.srcObject = e.streams[0];
-        }
-      }
-    };*/
-  }
-
-  /**
-   * 停止视频电话,屏幕共享
-   */
-  const stopVideoOnline = () => {
-    // this.setState({
-    //   isRecord: false
-    // })
-
-
-    let localVideoReceiver = document.getElementById("localVideoReceiver");
-    // @ts-ignore
-    if (localVideoReceiver && localVideoReceiver.srcObject && localVideoReceiver.srcObject.getTracks()) {
-      // @ts-ignore
-      localVideoReceiver.srcObject.getTracks().forEach((track) => track.stop());
-    }
-
-    let preview = document.getElementById("preview");
-    // @ts-ignore
-    if (preview && preview.srcObject && preview.srcObject.getTracks()) {
-      // @ts-ignore
-      preview.srcObject.getTracks().forEach((track) => track.stop());
-    }
-
-    let audioPhone = document.getElementById("audioPhone");
-    // @ts-ignore
-    if (audioPhone && audioPhone.srcObject && audioPhone.srcObject.getTracks()) {
-      // @ts-ignore
-      audioPhone.srcObject.getTracks().forEach((track) => track.stop());
-    }
-
-    // 停止视频或者屏幕共享时，将画布最小
-    appDispatch(changeCurrentScreenAction({width: 0, height: 0}))
-  }
-
-  /**
-   * 显示视频或者音频的面板
-   */
-  const mediaPanelDrawerOnClose = () => {
-    appDispatch(changeMediaAction(
-        {
-          media,
-          showMediaPanel: false,
-        }
-    ))
-  }
-
-  /**
-   * 如果接收到的消息不是正在聊天的消息，显示未读提醒
-   */
-  const showUnreadMessageDot = (toUuid:string) => {
-    // let userList = this.props.userList;
-    // for (var index in userList) {
-    //   if (userList[index].uuid === toUuid) {
-    //     userList[index].hasUnreadMessage = true;
-    //     this.props.setUserList(userList);
-    //     break;
-    //   }
-    // }
-  }
-
-  /**
-   * 接听电话后，发送接听确认消息，显示媒体面板
-   */
-  const handleOk = () => {
-    appDispatch(changeVideoCallModalAction(false))
-
-    let data = {
-      contentType: Constant.ACCEPT_VIDEO_ONLINE,
-      type: Constant.MESSAGE_TRANS_TYPE,
-      toUser: fromUserUuid,
-    }
-    sendMessage(data);
-
-
-    appDispatch(changeMediaAction({
-      ...media,
-      showMediaPanel: true,
-    }))
-  }
-
-  /**
-   * 关闭方法
-   */
-  const handleCancel = () => {
-    let data = {
-      contentType: Constant.REJECT_VIDEO_ONLINE,
-      type: Constant.MESSAGE_TRANS_TYPE,
-    }
-    sendMessage(data);
-
-    appDispatch(changeVideoCallModalAction(false))
-  }
-
-  /**
-   * 交易媒体电话
-   * @param message
-   */
-  const dealMediaCall = (message:any) => {
-    if (message.contentType === Constant.DIAL_AUDIO_ONLINE || message.contentType === Constant.DIAL_VIDEO_ONLINE) {
-      appDispatch(changeVideoCallModalAction(true))
-      appDispatch(changeCallNameAction(message.fromUsername))
-      appDispatch(changeFromUserUuidAction(message.from))
-      return;
-    }
-
-    if (message.contentType === Constant.CANCELL_AUDIO_ONLINE || message.contentType === Constant.CANCELL_VIDEO_ONLINE) {
-      appDispatch(changeVideoCallModalAction(false))
-      return;
-    }
-
-    if (message.contentType === Constant.REJECT_AUDIO_ONLINE || message.contentType === Constant.REJECT_VIDEO_ONLINE) {
-      appDispatch(changeMediaAction({
-        ...media,
-        mediaReject: true,
-      }))
-      return;
-    }
-
-    if (message.contentType === Constant.ACCEPT_VIDEO_ONLINE || message.contentType === Constant.ACCEPT_AUDIO_ONLINE) {
-      appDispatch(changeMediaAction({
-        ...media,
-        mediaConnected: true,
-      }))
-      return;
-
-    }
-  }
-
-  /**
-   * 处理webrtc消息，包括获取请求方的offer，回应answer等
-   * @param {消息内容}} messagePB
-   */
-/*
-  const dealWebRtcMessage = (messagePB: any) => {
-    if (messagePB.contentType >= Constant.DIAL_MEDIA_START && messagePB.contentType <= Constant.DIAL_MEDIA_END) {
-      dealMediaCall(messagePB);
-      return;
-    }
-    const {type, sdp, iceCandidate} = JSON.parse(messagePB.content);
-
-    if (type === "answer") {
-      const answerSdp = new RTCSessionDescription({type, sdp});
-      peer.localPeer.setRemoteDescription(answerSdp)
-    } else if (type === "answer_ice") {
-      peer.localPeer.addIceCandidate(iceCandidate)
-    } else if (type === "offer_ice") {
-      peer.addIceCandidate(iceCandidate)
-    } else if (type === "offer") {
-      if (!checkMediaPermission()) {
-        return;
-      }
-      let preview: any
-
-      let video = false;
-      if (messagePB.contentType === Constant.VIDEO_ONLINE) {
-        preview = document.getElementById("localVideoReceiver");
-        video = true
-        appDispatch(changeOnlineTypeAction(1))
-      } else {
-        preview = document.getElementById("audioPhone");
-        appDispatch(changeOnlineTypeAction(1))
-      }
-
-      navigator.mediaDevices
-          .getUserMedia({
-            audio: true,
-            video: video,
-          }).then((stream) => {
-        preview.srcObject = stream;
-        stream.getTracks().forEach(track => {
-          peer.addTrack(track, stream);
-        });
-
-        // 一定注意：需要将该动作，放在这里面，即流获取成功后，再进行answer创建。不然不能获取到流，从而不能播放视频。
-        const offerSdp = new RTCSessionDescription({type, sdp});
-        peer.setRemoteDescription(offerSdp)
-            .then(() => {
-              peer.createAnswer().then(answer => {
-                peer.setLocalDescription(answer)
-
-                let message = {
-                  content: JSON.stringify(answer),
-                  type: Constant.MESSAGE_TRANS_TYPE,
-                  messageType: messagePB.contentType
-                }
-                sendMessage(message);
-              })
-            });
-      });
-    }
-  }
-*/
-
+  let dataTest = Array.from({length: 100}, (_, index) => ({id: index}));
 
   return (
-      <div className="zf-chat">
+    <div className="zf-chat">
+      <Card title="Inner Card" bordered={false} extra={<MoreOutlined onClick={() => {
+      }}/>} style={{height: "100vh"}}>
 
-      </div>
+        {/*消息列表开始*/}
+        <div style={{height: 600, overflow: 'auto', padding: '0 16px'}}>
+          <InfiniteScroll
+            dataLength={dataTest.length}
+            hasMore={dataTest.length < 50}
+            loader={<Skeleton avatar paragraph={{rows: 1}} active/>}
+            endMessage={<Divider plain>It is all, nothing more 🤐</Divider>}
+            scrollableTarget="scrollableDiv"
+            next={() => {
+            }}>
+            <List
+              dataSource={dataTest}
+              renderItem={(item, index) => (
+                <List.Item>
+                  <List.Item.Meta
+                    style={{marginBottom: 10}}
+                    className={classNames({
+                      'zf-reverse-list': index & 2,
+                    })}
+                    avatar={<Avatar src={`https://api.dicebear.com/7.x/miniavs/svg?seed=${index}`}/>}
+                    title={<a href="https://ant.design">{item.id}</a>}
+                    description="Ant Design, a design language for background applications, is refined by Ant UED Team"
+                  />
+                </List.Item>
+              )}
+            />
+          </InfiniteScroll>
+        </div>
+        {/*消息列表结束*/}
+
+        {/*分割线开始*/}
+        <Divider></Divider>
+        {/*分割线结束*/}
+
+        {/*功能菜单开始*/}
+        <Space.Compact block>
+
+          <ChatFile sendMessage={sendMessage}/>
+
+
+          {/*<Tooltip title="Like">*/}
+          {/*  <Button icon={<LikeOutlined />} />*/}
+          {/*</Tooltip>*/}
+          {/*<Tooltip title="Comment">*/}
+          {/*  <Button icon={<CommentOutlined />} />*/}
+          {/*</Tooltip>*/}
+          {/*<Tooltip title="Star">*/}
+          {/*  <Button icon={<StarOutlined />} />*/}
+          {/*</Tooltip>*/}
+          {/*<Tooltip title="Heart">*/}
+          {/*  <Button icon={<HeartOutlined />} />*/}
+          {/*</Tooltip>*/}
+          {/*<Tooltip title="Share">*/}
+          {/*  <Button icon={<ShareAltOutlined />} />*/}
+          {/*</Tooltip>*/}
+          {/*<Tooltip title="Download">*/}
+          {/*  <Button icon={<DownloadOutlined />} />*/}
+          {/*</Tooltip>*/}
+        </Space.Compact>
+        {/*功能菜单结束*/}
+
+
+        {/*表单发送开始*/}
+        <Form>
+          <Form.Item name="content">
+            <Input.TextArea rows={7}/>
+          </Form.Item>
+          <Form.Item>
+            <Space style={{float: "right"}}>
+              <Button htmlType="reset">清除</Button>
+              <Button type="primary" htmlType="submit">发送</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+        {/*表单发送结束*/}
+
+
+      </Card>
+    </div>
   );
 });
 

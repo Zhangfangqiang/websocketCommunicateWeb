@@ -106,3 +106,15 @@ export function putUsersAvatar(params: PutUsersAvatarParamsInterface) {
     data: params
   })
 }
+
+interface getFriendsOrGroupInterface{
+  type:string
+}
+export  function getFriendsOrGroup(params:getFriendsOrGroupInterface){
+  console.log('getFriendsOrGroup:params', params)
+
+  return Request.post({
+    url: `/users/getFriendsOrGroup`,
+    data: params
+  })
+}

@@ -3,7 +3,7 @@ import {shallowEqual, useSelector} from "react-redux"
 
 const useUserData = () => {
   return useSelector((state: RootState) => ({
-    friends: state.user.friends,
+    friendsOrGroups: state.user.friendsOrGroups,
     userInfo: state.user.userInfo,
     userMenu: state.user.userMenu,
     selectMenuKey: state.user.selectMenuKey,

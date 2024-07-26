@@ -28,35 +28,12 @@ export interface initialStateInterface {
     icon: ReactNode,
   }[]
   selectMenuKey: string
-  friends: {
-    "id": number,
-    "userId": number,
-    "friendId": number,
-    "user": {
-      "id": number,
-      "uuid": string,
-      "city": string,
-      "introduction": string,
-      "avatar": string,
-      "name": string,
-      "created_at": string,
-      "updated_at": string,
-      "deleted_at": string
-    },
-    "friend": {
-      "id": number,
-      "uuid": string,
-      "city": string,
-      "introduction": string,
-      "avatar": string,
-      "name": string,
-      "created_at": string,
-      "updated_at": string,
-      "deleted_at": string
-    },
-    "created_at": string,
-    "updated_at": string,
-    "deleted_at": string
+  friendsOrGroups: {
+    "uuid": string,
+    "city": string,
+    "introduction": string,
+    "avatar": string,
+    "name": string,
   }[] | []    //好友列表
   chooseUser: {
     "id": number,
@@ -125,7 +102,7 @@ const initialState: initialStateInterface = {
     }
   ],
   selectMenuKey: '2',
-  friends: [],
+  friendsOrGroups: [],
   chooseUser: {
     // type 1 代表用户 type 2代表群 这里以后要加
     "id": 0,
@@ -198,8 +175,8 @@ const ActivationCodeSlice = createSlice({
     changeSelectMenuKeyAction(state, {payload}) {
       state.selectMenuKey = payload
     },
-    changeFriendsAction(state, {payload}) {
-      state.friends = payload
+    changeFriendsOrGroupsAction(state, {payload}) {
+      state.friendsOrGroups = payload
     },
     changeVideoCallModalAction(state, {payload}){
       state.videoCallModal = payload
@@ -218,7 +195,7 @@ changeFromUserUuidAction,
   changeMessageListAction,
   changeUserInfoAction,
   changeSocketAction,
-  changeFriendsAction,
+  changeFriendsOrGroupsAction,
   changeUserMenuAction,
   changeOnlineTypeAction,
   changeChooseUserAction,

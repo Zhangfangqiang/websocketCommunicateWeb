@@ -18,3 +18,5 @@ export const getContentByType = (type: number, url: string, content: any) => {
 
   return content;
 }
+
+

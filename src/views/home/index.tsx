@@ -7,42 +7,16 @@ import {useAppDispatch} from "@/stores";
 import {getUserFriends} from "@/services";
 import useUserData from "@/hooks/useUserData";
 import {memo, useEffect, useState} from 'react'
-import {changeFriendsAction, changeSelectMenuKeyAction} from "@/stores/modules/user";
+import {changeFriendsOrGroupsAction, changeSelectMenuKeyAction} from "@/stores/modules/user";
 import Chat from "@/views/home/chat";
 
 const Index = memo((props: { router: any }) => {
 
   const appDispatch = useAppDispatch()
-  const {userMenu, selectMenuKey, friends} = useUserData()
+  const {userMenu, selectMenuKey} = useUserData()
   const [collapsed, setCollapsed] = useState(true);
 
 
-  interface DataType {
-    gender: string;
-    name: {
-      title: string;
-      first: string;
-      last: string;
-    };
-    email: string;
-    picture: {
-      large: string;
-      medium: string;
-      thumbnail: string;
-    };
-    nat: string;
-  }
-
-  const [data, setData] = useState<DataType[]>([]);
-
-
-  useEffect(() => {
-
-    getUserFriends().then(res => {
-      appDispatch(changeFriendsAction(res.data))
-    })
-
-  }, []);
 
 
   return (

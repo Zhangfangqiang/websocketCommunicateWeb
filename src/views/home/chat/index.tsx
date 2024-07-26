@@ -1,7 +1,7 @@
 import moment from 'moment';
 import {withRouter} from "@/hoc"
 import classNames from "classnames";
-import {memo, useEffect} from 'react'
+import {memo, useEffect, useRef} from 'react'
 import {useAppDispatch} from "@/stores";
 import {Message} from "./proto/message"
 import useUserData from "@/hooks/useUserData";
@@ -243,7 +243,44 @@ const Index = memo((props: { router: any }) => {
   }
 
 
-  let dataTest = Array.from({length: 100}, (_, index) => ({id: index}));
+  /**
+   * 在消息面板 添加消息
+   * @param {消息内容，包括图片视频消息标签} content
+   */
+  const appendMessage = (content:any) => {
+    appDispatch(changeMessageListAction(
+      [
+        ...messageList,
+        {
+          author: userInfo?.data?rname,
+          avatar: userInfo.avatar,
+          content: <p>{content}</p>,
+          datetime: moment().fromNow(),
+        },
+      ]
+    ))
+  }
+
+  /**
+   * 在消息列表添加图片
+   * @param imgData
+   */
+  const appendImgToPanel = (imgData ) => {
+    // 将ArrayBuffer转换为base64进行展示
+    var binary    = '';
+    var bytes = new Uint8Array(imgData);
+    var len     = bytes.byteLength;
+
+    for (var i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+
+    let base64String = `data:image/jpeg;base64,${window.btoa(binary)}`;
+
+    appendMessage(<img src={base64String} alt="" width="150px"/>);
+  }
+
+
 
   return (
     <div className="zf-chat">
@@ -253,15 +290,15 @@ const Index = memo((props: { router: any }) => {
         {/*消息列表开始*/}
         <div style={{height: 600, overflow: 'auto', padding: '0 16px'}}>
           <InfiniteScroll
-            dataLength={dataTest.length}
-            hasMore={dataTest.length < 50}
+            dataLength={messageList.length}
+            hasMore={messageList.length < 50}
             loader={<Skeleton avatar paragraph={{rows: 1}} active/>}
             endMessage={<Divider plain>It is all, nothing more 🤐</Divider>}
             scrollableTarget="scrollableDiv"
             next={() => {
             }}>
             <List
-              dataSource={dataTest}
+              dataSource={messageList}
               renderItem={(item, index) => (
                 <List.Item>
                   <List.Item.Meta
@@ -286,31 +323,9 @@ const Index = memo((props: { router: any }) => {
 
         {/*功能菜单开始*/}
         <Space.Compact block>
-
           <ChatFile sendMessage={sendMessage}/>
-
-
-          {/*<Tooltip title="Like">*/}
-          {/*  <Button icon={<LikeOutlined />} />*/}
-          {/*</Tooltip>*/}
-          {/*<Tooltip title="Comment">*/}
-          {/*  <Button icon={<CommentOutlined />} />*/}
-          {/*</Tooltip>*/}
-          {/*<Tooltip title="Star">*/}
-          {/*  <Button icon={<StarOutlined />} />*/}
-          {/*</Tooltip>*/}
-          {/*<Tooltip title="Heart">*/}
-          {/*  <Button icon={<HeartOutlined />} />*/}
-          {/*</Tooltip>*/}
-          {/*<Tooltip title="Share">*/}
-          {/*  <Button icon={<ShareAltOutlined />} />*/}
-          {/*</Tooltip>*/}
-          {/*<Tooltip title="Download">*/}
-          {/*  <Button icon={<DownloadOutlined />} />*/}
-          {/*</Tooltip>*/}
         </Space.Compact>
         {/*功能菜单结束*/}
-
 
         {/*表单发送开始*/}
         <Form>
@@ -325,7 +340,6 @@ const Index = memo((props: { router: any }) => {
           </Form.Item>
         </Form>
         {/*表单发送结束*/}
-
 
       </Card>
     </div>

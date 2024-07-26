@@ -54,14 +54,13 @@ const Index = memo((props: { router: any, sendMessage: (data: any) => void }) =>
 
 
         let data = {
-          // content: this.state.value,
           contentType: 3,
           fileSuffix: fileSuffix,
           file: u8
         }
 
-        console.log(props.sendMessage(data))
-        // props.sendMessage(data)
+        // console.log(props.sendMessage(data))
+        props.sendMessage(data)
 
         if (["jpeg", "jpg", "png", "gif", "tif", "bmp", "dwg"].indexOf(fileSuffix) !== -1) {
           //将图片追加到消息列表

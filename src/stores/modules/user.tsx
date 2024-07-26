@@ -21,43 +21,25 @@ interface userInfoInterface {
 }
 
 export interface initialStateInterface {
-  userInfo: userInfoInterface |null
+  userInfo: userInfoInterface | null
   userMenu: {
     key: string,
     label: string,
     icon: ReactNode,
   }[]
   selectMenuKey: string
-  friends: {
+  friendsOrGroups: {
     "id": number,
-    "userId": number,
-    "friendId": number,
-    "user": {
-      "id": number,
-      "uuid": string,
-      "city": string,
-      "introduction": string,
-      "avatar": string,
-      "name": string,
-      "created_at": string,
-      "updated_at": string,
-      "deleted_at": string
-    },
-    "friend": {
-      "id": number,
-      "uuid": string,
-      "city": string,
-      "introduction": string,
-      "avatar": string,
-      "name": string,
-      "created_at": string,
-      "updated_at": string,
-      "deleted_at": string
-    },
+    "uuid": string,
+    "city": string,
+    "introduction": string,
+    "avatar": string,
+    "name": string,
     "created_at": string,
     "updated_at": string,
     "deleted_at": string
   }[] | []    //好友列表
+  //选择的用户
   chooseUser: {
     "id": number,
     "uuid": string,
@@ -88,8 +70,7 @@ export interface initialStateInterface {
   },
   callName: string,
   fromUserUuid: string,
-  videoCallModal:boolean
-
+  videoCallModal: boolean
 
 
 }
@@ -125,7 +106,7 @@ const initialState: initialStateInterface = {
     }
   ],
   selectMenuKey: '2',
-  friends: [],
+  friendsOrGroups: [],
   chooseUser: {
     // type 1 代表用户 type 2代表群 这里以后要加
     "id": 0,
@@ -157,7 +138,7 @@ const initialState: initialStateInterface = {
   },
   callName: '',
   fromUserUuid: '',
-  videoCallModal:false
+  videoCallModal: false
 }
 
 /**
@@ -167,6 +148,8 @@ const ActivationCodeSlice = createSlice({
   name: "verifyCodes",
   initialState,
   reducers: {
+
+
     changeCallNameAction(state, {payload}) {
       state.callName = payload
     },
@@ -186,7 +169,7 @@ const ActivationCodeSlice = createSlice({
     changeOnlineTypeAction(state, {payload}) {
       state.onlineType = payload
     },
-    changeMediaAction(state, {payload}){
+    changeMediaAction(state, {payload}) {
       state.media = payload
     },
     changeMessageListAction(state, {payload}) {
@@ -198,13 +181,13 @@ const ActivationCodeSlice = createSlice({
     changeSelectMenuKeyAction(state, {payload}) {
       state.selectMenuKey = payload
     },
-    changeFriendsAction(state, {payload}) {
-      state.friends = payload
+    changeFriendsOrGroupsAction(state, {payload}) {
+      state.friendsOrGroups = payload
     },
-    changeVideoCallModalAction(state, {payload}){
+    changeVideoCallModalAction(state, {payload}) {
       state.videoCallModal = payload
     },
-    changeChooseUserAction(state, {payload}){
+    changeChooseUserAction(state, {payload}) {
       state.chooseUser = payload
     }
   },
@@ -212,18 +195,18 @@ const ActivationCodeSlice = createSlice({
 
 export const {
   changeCallNameAction,
-changeFromUserUuidAction,
+  changeFromUserUuidAction,
   changeMediaAction,
   changeCurrentScreenAction,
   changeMessageListAction,
   changeUserInfoAction,
   changeSocketAction,
-  changeFriendsAction,
+  changeFriendsOrGroupsAction,
   changeUserMenuAction,
   changeOnlineTypeAction,
   changeChooseUserAction,
   changeSelectMenuKeyAction,
-changeVideoCallModalAction
+  changeVideoCallModalAction
 } = ActivationCodeSlice.actions
 
 export default ActivationCodeSlice.reducer

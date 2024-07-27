@@ -1,9 +1,8 @@
-import {ReactNode} from "react";
-import {createSlice} from '@reduxjs/toolkit'
-import {BarsOutlined, PoweroffOutlined, TeamOutlined, UserOutlined} from '@ant-design/icons';
-import {Avatar} from "antd";
+import {Avatar} from "antd"
+import {ReactNode} from "react"
 import ls from "@/utils/localStorage"
-
+import {createSlice} from '@reduxjs/toolkit'
+import {BarsOutlined, PoweroffOutlined, TeamOutlined, UserOutlined} from '@ant-design/icons'
 
 interface userInfoInterface {
   data?: {
@@ -21,7 +20,7 @@ interface userInfoInterface {
 }
 
 export interface initialStateInterface {
-  userInfo: userInfoInterface |null
+  userInfo: userInfoInterface | null
   userMenu: {
     key: string,
     label: string,
@@ -29,12 +28,17 @@ export interface initialStateInterface {
   }[]
   selectMenuKey: string
   friendsOrGroups: {
+    "id": number,
     "uuid": string,
     "city": string,
     "introduction": string,
     "avatar": string,
     "name": string,
+    "created_at": string,
+    "updated_at": string,
+    "deleted_at": string
   }[] | []    //好友列表
+  //选择的用户
   chooseUser: {
     "id": number,
     "uuid": string,
@@ -65,10 +69,7 @@ export interface initialStateInterface {
   },
   callName: string,
   fromUserUuid: string,
-  videoCallModal:boolean
-
-
-
+  videoCallModal: boolean
 }
 
 
@@ -134,7 +135,7 @@ const initialState: initialStateInterface = {
   },
   callName: '',
   fromUserUuid: '',
-  videoCallModal:false
+  videoCallModal: false
 }
 
 /**
@@ -144,6 +145,8 @@ const ActivationCodeSlice = createSlice({
   name: "verifyCodes",
   initialState,
   reducers: {
+
+
     changeCallNameAction(state, {payload}) {
       state.callName = payload
     },
@@ -163,7 +166,7 @@ const ActivationCodeSlice = createSlice({
     changeOnlineTypeAction(state, {payload}) {
       state.onlineType = payload
     },
-    changeMediaAction(state, {payload}){
+    changeMediaAction(state, {payload}) {
       state.media = payload
     },
     changeMessageListAction(state, {payload}) {
@@ -178,10 +181,10 @@ const ActivationCodeSlice = createSlice({
     changeFriendsOrGroupsAction(state, {payload}) {
       state.friendsOrGroups = payload
     },
-    changeVideoCallModalAction(state, {payload}){
+    changeVideoCallModalAction(state, {payload}) {
       state.videoCallModal = payload
     },
-    changeChooseUserAction(state, {payload}){
+    changeChooseUserAction(state, {payload}) {
       state.chooseUser = payload
     }
   },
@@ -189,7 +192,7 @@ const ActivationCodeSlice = createSlice({
 
 export const {
   changeCallNameAction,
-changeFromUserUuidAction,
+  changeFromUserUuidAction,
   changeMediaAction,
   changeCurrentScreenAction,
   changeMessageListAction,
@@ -200,7 +203,7 @@ changeFromUserUuidAction,
   changeOnlineTypeAction,
   changeChooseUserAction,
   changeSelectMenuKeyAction,
-changeVideoCallModalAction
+  changeVideoCallModalAction
 } = ActivationCodeSlice.actions
 
 export default ActivationCodeSlice.reducer

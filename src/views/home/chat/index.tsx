@@ -1,7 +1,7 @@
 import moment from 'moment';
 import {withRouter} from "@/hoc"
 import classNames from "classnames";
-import {memo, useEffect} from 'react'
+import {memo, useEffect, useRef} from 'react'
 import {useAppDispatch} from "@/stores";
 import {Message} from "./proto/message"
 import useUserData from "@/hooks/useUserData";
@@ -16,11 +16,13 @@ import ChatFile from "@/views/home/chat/c-cpns/ChatFile";
 
 
 const Index = memo((props: { router: any }) => {
+  const [textForm] = Form.useForm();
   const appDispatch = useAppDispatch()
   const {chooseUser, messageList, userInfo} = useUserData()
 
 
   useEffect(() => {
+    // console.log(userInfo?.data?.name)
     connection()
 
     /*    setInterval(()=>{
@@ -98,7 +100,7 @@ const Index = memo((props: { router: any }) => {
     // @ts-ignore
     window.peer = new RTCPeerConnection();
     // @ts-ignore
-    window.socket = new WebSocket(WS_BASE_URL + "/socket.io?user=" + "uuid")
+    window.socket = new WebSocket(WS_BASE_URL + "/socket.io?user=" + userInfo?.data?.uuid)
 
     let image = document.getElementById('receiver');
 
@@ -235,6 +237,7 @@ const Index = memo((props: { router: any }) => {
       to: toUser,
     }
 
+
     const messagePB = Message.create(data)
     // @ts-ignore
     console.log(window)
@@ -243,7 +246,45 @@ const Index = memo((props: { router: any }) => {
   }
 
 
-  let dataTest = Array.from({length: 100}, (_, index) => ({id: index}));
+  /**
+   * 在消息面板 添加消息
+   * @param {消息内容，包括图片视频消息标签} content
+   */
+  const appendMessage = (content:any) => {
+
+    appDispatch(changeMessageListAction(
+      [
+        ...messageList,
+        {
+          author: userInfo?.data?.name,
+          avatar: userInfo?.data?.avatar,
+          datetime: moment().fromNow(),
+          content: <p>{content}</p>,
+        },
+      ]
+    ))
+  }
+
+  /**
+   * 在消息列表添加图片
+   * @param imgData
+   */
+  const appendImgToPanel = (imgData:ArrayBuffer ) => {
+    // 将ArrayBuffer转换为base64进行展示
+    var binary    = '';
+    var bytes = new Uint8Array(imgData);
+    var len     = bytes.byteLength;
+
+    for (var i = 0; i < len; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+
+    let base64String = `data:image/jpeg;base64,${window.btoa(binary)}`;
+
+    appendMessage(<img src={base64String} alt="" width="150px"/>);
+  }
+
+
 
   return (
     <div className="zf-chat">
@@ -253,25 +294,26 @@ const Index = memo((props: { router: any }) => {
         {/*消息列表开始*/}
         <div style={{height: 600, overflow: 'auto', padding: '0 16px'}}>
           <InfiniteScroll
-            dataLength={dataTest.length}
-            hasMore={dataTest.length < 50}
+            dataLength={messageList.length}
+            hasMore={messageList.length < 50}
             loader={<Skeleton avatar paragraph={{rows: 1}} active/>}
             endMessage={<Divider plain>It is all, nothing more 🤐</Divider>}
             scrollableTarget="scrollableDiv"
             next={() => {
             }}>
             <List
-              dataSource={dataTest}
+              dataSource={messageList}
               renderItem={(item, index) => (
                 <List.Item>
+
                   <List.Item.Meta
                     style={{marginBottom: 10}}
                     className={classNames({
-                      'zf-reverse-list': index & 2,
+                      'zf-reverse-list': item.author === userInfo?.data?.name,
                     })}
-                    avatar={<Avatar src={`https://api.dicebear.com/7.x/miniavs/svg?seed=${index}`}/>}
-                    title={<a href="https://ant.design">{item.id}</a>}
-                    description="Ant Design, a design language for background applications, is refined by Ant UED Team"
+                    avatar={<Avatar src={item.avatar}/>}
+                    title={`${item.author} - ${item.datetime}`}
+                    description={item.content}
                   />
                 </List.Item>
               )}
@@ -286,34 +328,25 @@ const Index = memo((props: { router: any }) => {
 
         {/*功能菜单开始*/}
         <Space.Compact block>
-
-          <ChatFile sendMessage={sendMessage}/>
-
-
-          {/*<Tooltip title="Like">*/}
-          {/*  <Button icon={<LikeOutlined />} />*/}
-          {/*</Tooltip>*/}
-          {/*<Tooltip title="Comment">*/}
-          {/*  <Button icon={<CommentOutlined />} />*/}
-          {/*</Tooltip>*/}
-          {/*<Tooltip title="Star">*/}
-          {/*  <Button icon={<StarOutlined />} />*/}
-          {/*</Tooltip>*/}
-          {/*<Tooltip title="Heart">*/}
-          {/*  <Button icon={<HeartOutlined />} />*/}
-          {/*</Tooltip>*/}
-          {/*<Tooltip title="Share">*/}
-          {/*  <Button icon={<ShareAltOutlined />} />*/}
-          {/*</Tooltip>*/}
-          {/*<Tooltip title="Download">*/}
-          {/*  <Button icon={<DownloadOutlined />} />*/}
-          {/*</Tooltip>*/}
+          <ChatFile sendMessage={sendMessage} appendImgToPanel={appendImgToPanel} appendMessage={appendMessage}/>
         </Space.Compact>
         {/*功能菜单结束*/}
 
-
         {/*表单发送开始*/}
-        <Form>
+        <Form form={textForm} onFinish={(values) => {
+          if (values.content.length === 0) {
+            return;
+          }
+
+          let message = {
+            content: values.content,
+            contentType: 1,
+          }
+
+          sendMessage(message)
+          appendMessage(values.content);
+          textForm.resetFields();
+        }}>
           <Form.Item name="content">
             <Input.TextArea rows={7}/>
           </Form.Item>
@@ -325,7 +358,6 @@ const Index = memo((props: { router: any }) => {
           </Form.Item>
         </Form>
         {/*表单发送结束*/}
-
 
       </Card>
     </div>

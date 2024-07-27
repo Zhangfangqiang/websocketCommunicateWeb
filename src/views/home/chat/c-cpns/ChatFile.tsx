@@ -5,7 +5,12 @@ import {Tooltip, Button, message} from "antd";
 import {FileAddOutlined, FileOutlined} from '@ant-design/icons';
 
 
-const Index = memo((props: { router: any, sendMessage: (data: any) => void }) => {
+const Index = memo((props: {
+  router: any,
+  sendMessage: (data: any) => void,
+  appendMessage: (data: any) => void,
+  appendImgToPanel: (data: any) => void,
+}) => {
   const {chooseUser} = useUserData()
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
@@ -54,21 +59,19 @@ const Index = memo((props: { router: any, sendMessage: (data: any) => void }) =>
 
 
         let data = {
-          // content: this.state.value,
           contentType: 3,
           fileSuffix: fileSuffix,
           file: u8
         }
 
-        console.log(props.sendMessage(data))
-        // props.sendMessage(data)
+        props.sendMessage(data)
 
         if (["jpeg", "jpg", "png", "gif", "tif", "bmp", "dwg"].indexOf(fileSuffix) !== -1) {
           //将图片追加到消息列表
-          // this.props.appendImgToPanel(file)
+          props.appendImgToPanel(file)
         } else {
           //将图片追加到消息列表
-          // this.props.appendMessage(<FileOutlined style={{fontSize: 38}}/>)
+          props.appendMessage(<FileOutlined style={{fontSize: 38}}/>)
         }
       }
     })

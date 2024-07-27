@@ -1,33 +1,38 @@
 import {withRouter} from "@/hoc"
+import classNames from "classnames";
 import {useAppDispatch} from "@/stores";
 import {Avatar, Input, List} from 'antd';
-import {getFriendsOrGroup, getUserFriends} from "@/services";
 import useUserData from "@/hooks/useUserData";
 import {memo, useEffect, useState} from 'react'
-import {changeChooseUserAction, changeFriendsOrGroupsAction} from "@/stores/modules/user";
+import {postGetFriendsOrGroup} from "@/services";
 import {SearchOutlined, UserOutlined} from "@ant-design/icons";
+import {changeChooseUserAction, changeFriendsOrGroupsAction} from "@/stores/modules/user";
 
 const Index = memo((props: { router: any }) => {
-    const {friendsOrGroups, selectMenuKey} = useUserData()
+    const {friendsOrGroups, chooseUser, selectMenuKey} = useUserData()
     const [userSearchName, setUserSearchName] = useState("")
     const appDispatch = useAppDispatch()
 
 
     useEffect(() => {
-        getFriendsOrGroup({type: "1"}).then(res => {
+        postGetFriendsOrGroup({type: "1"}).then(res => {
             appDispatch(changeFriendsOrGroupsAction(res.data))
         })
     }, []);
 
-
     useEffect(() => {
         if (selectMenuKey === "2" || selectMenuKey === "3") {
-            getFriendsOrGroup({type: `${parseInt(selectMenuKey) - 1}`}).then(res => {
+            postGetFriendsOrGroup({type: `${parseInt(selectMenuKey) - 1}`}).then(res => {
                 appDispatch(changeFriendsOrGroupsAction(res.data))
             })
         }
     }, [selectMenuKey]);
 
+    useEffect(() => {
+
+        console.log(chooseUser)
+
+    }, [chooseUser]);
 
     return (
         <div className="zf-friends">
@@ -45,10 +50,18 @@ const Index = memo((props: { router: any }) => {
             <List
                 dataSource={userSearchName != "" ? friendsOrGroups.filter(item => item.name.toLowerCase().includes(userSearchName.toLowerCase())) : friendsOrGroups}
                 renderItem={(item) => (
-                    <List.Item key={item.uuid} onClick={() => {
-                        appDispatch(changeChooseUserAction(item))
-                    }}>
+                    <List.Item key={item.id}
+                               className={
+                                   classNames({
+                                       'zf-select-user': item.uuid === chooseUser.uuid,
+                                   })
+                               }
+                               onClick={() => {
+                                   /*选择用户列表的信息*/
+                                   appDispatch(changeChooseUserAction(item))
+                               }}>
                         <List.Item.Meta
+
                             avatar={<Avatar src={item.avatar}/>}
                             title={item.name}
                             description={item.introduction}/>

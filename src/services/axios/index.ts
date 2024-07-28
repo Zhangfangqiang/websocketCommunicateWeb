@@ -1,6 +1,7 @@
 import {BASE_URL, TIMEOUT} from "./config"
 import axios, {AxiosRequestConfig} from "axios"
 import ls from "@/utils/localStorage"
+import {message} from "antd";
 
 
 
@@ -35,6 +36,11 @@ class Request {
             break;
           case 404:
             console.error('Not Found:', err.response.data);
+            break;
+          case 422:
+
+
+            message.error(err.response.data.errors[Object.keys(err.response.data.errors)[0]])
             break;
           case 500:
             console.error('Internal Server Error:', err.response.data);
@@ -73,4 +79,4 @@ class Request {
   }
 }
 
-export default new Request(BASE_URL, TIMEOUT)
+export default new Request(BASE_URL+"/v1", TIMEOUT)

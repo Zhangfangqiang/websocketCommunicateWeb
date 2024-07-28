@@ -107,14 +107,14 @@ const initialState: initialStateInterface = {
   chooseUser: {
     // type 1 代表用户 type 2代表群 这里以后要加
     "id": 0,
-    "uuid": "string",
-    "city": "string",
-    "introduction": "string",
-    "avatar": "string",
-    "name": "string",
-    "created_at": "string",
-    "updated_at": "string",
-    "deleted_at": "string"
+    "uuid": "",
+    "city": "",
+    "introduction": "",
+    "avatar": "",
+    "name": "",
+    "created_at": "",
+    "updated_at": "",
+    "deleted_at": ""
   },
   messageList: [],
   socket: {},

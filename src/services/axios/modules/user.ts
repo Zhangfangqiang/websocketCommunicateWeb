@@ -119,3 +119,16 @@ export function postGetFriendsOrGroup (params: PostGetFriendsOrGroupParamsInterf
   })
 }
 
+/**
+ * 查询聊天记录
+ */
+interface postMessagesIndexInterface {
+  "type": string,
+  "to_user_id": string
+}
+export function postMessagesIndex(params: postMessagesIndexInterface) {
+  return Request.post({
+    url: `/messages/index`,
+    data: params
+  })
+}

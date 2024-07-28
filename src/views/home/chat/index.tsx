@@ -20,9 +20,7 @@ const Index = memo((props: { router: any }) => {
   const appDispatch = useAppDispatch()
   const {chooseUser, messageList, userInfo} = useUserData()
 
-
   useEffect(() => {
-    // console.log(userInfo?.data?.name)
     connection()
 
     /*    setInterval(()=>{
@@ -100,7 +98,7 @@ const Index = memo((props: { router: any }) => {
     // @ts-ignore
     window.peer = new RTCPeerConnection();
     // @ts-ignore
-    window.socket = new WebSocket(WS_BASE_URL + "/socket.io?user=" + userInfo?.data?.uuid)
+    window.socket = new WebSocket(WS_BASE_URL + "/v1/socket.io?user=" + userInfo?.data?.uuid)
 
     let image = document.getElementById('receiver');
 
@@ -175,8 +173,6 @@ const Index = memo((props: { router: any }) => {
           },
         ]))
       })
-
-
     }
 
     /**

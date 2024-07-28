@@ -4,9 +4,12 @@ import {useAppDispatch} from "@/stores";
 import {Avatar, Input, List} from 'antd';
 import useUserData from "@/hooks/useUserData";
 import {memo, useEffect, useState} from 'react'
-import {postGetFriendsOrGroup} from "@/services";
+import {postGetFriendsOrGroup, postMessagesIndex} from "@/services";
 import {SearchOutlined, UserOutlined} from "@ant-design/icons";
-import {changeChooseUserAction, changeFriendsOrGroupsAction} from "@/stores/modules/user";
+import {changeChooseUserAction, changeFriendsOrGroupsAction, changeMessageListAction} from "@/stores/modules/user";
+import {getContentByType} from "@/utils/common";
+import moment from "moment";
+import {BASE_URL} from "@/services/axios/config";
 
 const Index = memo((props: { router: any }) => {
     const {friendsOrGroups, chooseUser, selectMenuKey} = useUserData()
@@ -29,9 +32,28 @@ const Index = memo((props: { router: any }) => {
     }, [selectMenuKey]);
 
     useEffect(() => {
+        if ((selectMenuKey === "2" || selectMenuKey === "3") && chooseUser.uuid.length > 0) {
+            console.log({type: `${parseInt(selectMenuKey) - 1}`, to_user_id: chooseUser.uuid})
+            postMessagesIndex({type: `${parseInt(selectMenuKey) - 1}`, to_user_id: chooseUser.uuid}).then(res => {
+                let data = res.data
+                let comments = []
 
-        console.log(chooseUser)
+                for (var i = 0; i < data.length; i++) {
+                    let contentType = data[i].contentType
+                    let content = getContentByType(contentType, data[i].url, data[i].content)
 
+                    let comment = {
+                        author: data[i].fromUsername,
+                        avatar: BASE_URL + "/file/" + data[i].avatar,
+                        content: <p>{content}</p>,
+                        datetime: moment(data[i].createAt).fromNow(),
+                    }
+                    comments.push(comment)
+                }
+
+                appDispatch(changeMessageListAction(comments))
+            })
+        }
     }, [chooseUser]);
 
     return (

@@ -1,6 +1,4 @@
 .zf-home-page {
-
-
   .zf-menu-expand {
     width: 200px;
   }
@@ -46,3 +44,23 @@
 
 }
 
+
+.auth-public-style{
+  height: 100vh;
+  display: flex;
+  flex-flow: row nowrap;
+  > div:first-child {
+    flex: .6;
+    overflow: hidden;
+
+    img {
+
+    }
+  }
+
+  > div:last-child {
+    padding-left: 50px;
+    flex: .4;
+    padding-top: 14vh;
+  }
+}

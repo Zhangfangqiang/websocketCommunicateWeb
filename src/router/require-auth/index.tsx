@@ -15,13 +15,20 @@ export function RequireAuth({children}: { children: any }) {
 
   let location = useLocation();
 
-   let prohibitPaths = ['/signup','/login']
+
+  let prohibitPaths = ['/signup','/login']
   const {userInfo}= useUserData()
 
 
   //如果是登录后禁止的页面
   if (prohibitPaths.includes( location.pathname) && userInfo) {
     return <Navigate to="/" state={{from: location}} replace/>;
+  }
+
+
+  //如果没有登录跳转到聊天节目就让他登录
+  if(location.pathname ==="/" && !userInfo){
+    return <Navigate to="/login" state={{from: location}} replace/>;
   }
 
   return children;

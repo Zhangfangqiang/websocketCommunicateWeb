@@ -6,7 +6,7 @@ import {RequireAuth} from "@/router/require-auth";
 const routes = [
   {
     path: "/",
-    element: <Home/>
+    element: <RequireAuth><Home/></RequireAuth>
   }, {
     path: "/login",
     element: <RequireAuth><Login/></RequireAuth>

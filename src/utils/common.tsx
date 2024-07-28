@@ -9,11 +9,11 @@ export const getContentByType = (type: number, url: string, content: any) => {
   if (type === 2) {
     content = <FileOutlined style={{fontSize: 38}}/>
   } else if (type === 3) {
-    content = <img src={BASE_URL + "/file/" + url} alt="" width="150px"/>
+    content = <img src={BASE_URL + "/" + url} alt="" width="150px"/>
   } else if (type === 4) {
-    content = <audio src={BASE_URL + "/file/" + url} controls autoPlay={false} preload="auto"/>
+    content = <audio src={BASE_URL + "/" + url} controls autoPlay={false} preload="auto"/>
   } else if (type === 5) {
-    content = <video src={BASE_URL + "/file/" + url} controls autoPlay={false} preload="auto" width='200px'/>
+    content = <video src={BASE_URL + "/" + url} controls autoPlay={false} preload="auto" width='200px'/>
   }
 
   return content;

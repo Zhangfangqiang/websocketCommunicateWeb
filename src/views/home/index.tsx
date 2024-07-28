@@ -3,11 +3,12 @@ import Friends from "./friends"
 import {Flex, Menu} from 'antd';
 import {withRouter} from "@/hoc"
 import classNames from 'classnames';
+import ls from "@/utils/localStorage"
 import {useAppDispatch} from "@/stores";
 import useUserData from "@/hooks/useUserData";
 import {memo, useEffect, useState} from 'react'
 
-import {changeFriendsOrGroupsAction, changeSelectMenuKeyAction} from "@/stores/modules/user";
+import {changeFriendsOrGroupsAction, changeSelectMenuKeyAction, changeUserInfoAction} from "@/stores/modules/user";
 import Chat from "@/views/home/chat";
 
 const Index = memo((props: { router: any }) => {
@@ -35,7 +36,8 @@ const Index = memo((props: { router: any }) => {
                                 setCollapsed(!collapsed);
                                 break
                             case '11':
-                                console.log("退出登录")
+                                ls.setItem("userInfo", JSON.stringify(""))
+                                appDispatch(changeUserInfoAction(null))
                                 break
                         }
                     }}

@@ -1,23 +1,20 @@
 import "./style.scss"
 import Friends from "./friends"
-import {Flex, Menu} from 'antd';
+import {Avatar, Flex, Menu} from 'antd';
 import {withRouter} from "@/hoc"
+import {memo, useState} from 'react'
 import classNames from 'classnames';
+import Chat from "@/views/home/chat";
 import ls from "@/utils/localStorage"
 import {useAppDispatch} from "@/stores";
 import useUserData from "@/hooks/useUserData";
-import {memo, useEffect, useState} from 'react'
-
-import {changeFriendsOrGroupsAction, changeSelectMenuKeyAction, changeUserInfoAction} from "@/stores/modules/user";
-import Chat from "@/views/home/chat";
+import {changeSelectMenuKeyAction, changeUserInfoAction} from "@/stores/modules/user";
+import {BarsOutlined, PoweroffOutlined, TeamOutlined, UserOutlined} from "@ant-design/icons";
 
 const Index = memo((props: { router: any }) => {
-
     const appDispatch = useAppDispatch()
-
-    const {userMenu, selectMenuKey} = useUserData()
+    const { selectMenuKey} = useUserData()
     const [collapsed, setCollapsed] = useState(true);
-
 
     return (
         <div className="zf-home-page">
@@ -43,7 +40,33 @@ const Index = memo((props: { router: any }) => {
                     }}
                     defaultSelectedKeys={[selectMenuKey]}
                     mode="inline"
-                    items={userMenu}
+                    items={[
+                        {
+                            key: '1',
+                            label: '用户名称',
+                            icon: <Avatar size={20}>张</Avatar>,
+                        },
+                        {
+                            key: '2',
+                            label: '好友',
+                            icon: <UserOutlined/>,
+                        },
+                        {
+                            key: '3',
+                            label: '群聊',
+                            icon: <TeamOutlined/>,
+                        },
+                        {
+                            key: '10',
+                            label: '展开',
+                            icon: <BarsOutlined/>,
+                        },
+                        {
+                            key: '11',
+                            label: '退出',
+                            icon: <PoweroffOutlined/>,
+                        }
+                    ]}
                     style={{height: "100vh"}}
                 />
 

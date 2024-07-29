@@ -1,44 +1,50 @@
 import moment from 'moment';
 import {withRouter} from "@/hoc"
 import classNames from "classnames";
-import {memo, useEffect, useRef} from 'react'
-import {useAppDispatch} from "@/stores";
 import {Message} from "./proto/message"
+import {useAppDispatch} from "@/stores";
+import {memo, useEffect, useRef} from 'react'
 import useUserData from "@/hooks/useUserData";
 import {MoreOutlined} from "@ant-design/icons";
 import {getContentByType} from "@/utils/common";
+import {WS_BASE_URL} from "@/services/axios/config"
 import * as Constant from '@/common/constant/Constant'
-import {BASE_URL, WS_BASE_URL} from "@/services/axios/config"
-import {changeMessageListAction} from "@/stores/modules/user";
+import ChatFile from "@/views/home/chat/c-cpns/ChatFile";
 import InfiniteScroll from 'react-infinite-scroll-component';
 import {Avatar, Button, Card, Divider, Form, Input, List, Skeleton, Space} from "antd";
-import ChatFile from "@/views/home/chat/c-cpns/ChatFile";
+import {changeMessageListAction, changeMessageListActionThunk, changeOnlineTypeAction} from "@/stores/modules/user";
+import ChatAudio from "@/views/home/chat/c-cpns/ChatAudio";
 
 
 const Index = memo((props: { router: any }) => {
   const [textForm] = Form.useForm();
   const appDispatch = useAppDispatch()
-  const {chooseUser, messageList, userInfo} = useUserData()
+  const {chooseUser, messageList, userInfo, onlineType} = useUserData()
+  const chooseUserRef = useRef(chooseUser);
+  const onlineTypeRef = useRef(onlineType);
+  const listRef = useRef<HTMLDivElement | null>(null);
 
+  /*外抛选中用户信息*/
+  useEffect(() => {
+    chooseUserRef.current = chooseUser;
+  }, [chooseUser]);
+
+  /*外抛来电类型*/
+  useEffect(() => {
+    onlineTypeRef.current = onlineType;
+  }, [onlineType]);
+
+  /*初始化连接*/
   useEffect(() => {
     connection()
-
-    /*    setInterval(()=>{
-          console.log("messagePB")
-          const messagePB = Message.create(
-            {
-              "content": "234234",
-              "contentType": 1,
-              "messageType": 1,
-              "fromUsername": "zf1860@qq.com",
-              "from": "d8e37262-3533-40f0-b45f-b57d1b1db82f",
-              "to": "c9c72dc7-bdca-46ac-b761-a5656554b1be"
-            }
-          )
-          socket.send(Message.encode(messagePB).finish())
-        },5000)*/
-
   }, [])
+
+  /*监听消息列表*/
+  useEffect(() => {
+    if (listRef.current) {
+      listRef.current.scrollTop = listRef.current.scrollHeight;
+    }
+  }, [messageList]);
 
   var lockConnection = false;
 
@@ -107,7 +113,8 @@ const Index = memo((props: { router: any }) => {
      */
     // @ts-ignore
     window.socket.onopen = () => {
-      heartCheck.start()
+      heartCheck.start()      //心跳检测开启
+      webrtcConnection()
     }
 
     /**
@@ -117,6 +124,7 @@ const Index = memo((props: { router: any }) => {
     // @ts-ignore
     window.socket.onmessage = (message: MessageEvent) => {
       heartCheck.start()
+      let chooseUser = chooseUserRef.current;                //获取选中用户
       let reader = new FileReader();              //创建 FileReader 对象以读取二进制数据
       reader.readAsArrayBuffer(message.data);                //将收到的 blob 对象读取为 ArrayBuffer
 
@@ -124,17 +132,21 @@ const Index = memo((props: { router: any }) => {
         // @ts-ignore
         const messagePB = Message.decode(new Uint8Array(event.target.result as ArrayBuffer));
 
+        /*心跳检测保持链接*/
         if (messagePB.type === "heatbeat") {
           return;
         }
 
         /*处理 WebRTC 消息 | 接受语音电话或者视频电话 webrtc*/
         if (messagePB.type === Constant.MESSAGE_TRANS_TYPE) {
-          // dealWebRtcMessage(messagePB);
+          dealWebRtcMessage(messagePB)
           return;
         }
 
         /*如果该消息不是正在聊天消息，显示未读提醒*/
+        console.log(chooseUser.uuid)
+        console.log(messagePB.from)
+
         if (chooseUser.uuid !== messagePB.from) {
           // showUnreadMessageDot(messagePB.from);
           return;
@@ -154,24 +166,15 @@ const Index = memo((props: { router: any }) => {
           return;
         }
 
-
-        let avatar = chooseUser.avatar
-        if (messagePB.messageType === 2) {
-          avatar = BASE_URL + "/file/" + messagePB.avatar  //这里要改
-        }
-
         // 文件内容，录制的视频，语音内容
-        let content = getContentByType(messagePB.contentType, messagePB.url, messagePB.content)
-
-        appDispatch(changeMessageListAction([
-          ...messageList,
-          {
+        // @ts-ignore
+        appDispatch(
+          changeMessageListActionThunk({
             author: messagePB.fromUsername,
-            avatar: avatar,
-            content: <p>1111</p>,
+            avatar: "", //用户头像
+            content: <p>{getContentByType(messagePB.contentType, messagePB.url, messagePB.content)}</p>,
             datetime: moment().fromNow(),
-          },
-        ]))
+          }))
       })
     }
 
@@ -193,6 +196,7 @@ const Index = memo((props: { router: any }) => {
       reconnect()
     }
   }
+
 
   /**
    * 断开连接后重新连接
@@ -235,8 +239,7 @@ const Index = memo((props: { router: any }) => {
 
 
     const messagePB = Message.create(data)
-    // @ts-ignore
-    console.log(window)
+
     // @ts-ignore
     window.socket.send(Message.encode(messagePB).finish())
   }
@@ -282,26 +285,150 @@ const Index = memo((props: { router: any }) => {
 
 
 
+  /**
+   * webrtc 绑定事件
+   */
+  const webrtcConnection = () => {
+    /**
+     * 对等方收到ice信息后，通过调用 addIceCandidate 将接收的候选者信息传递给浏览器的ICE代理。
+     * @param {候选人信息} e
+     */
+    // @ts-ignore
+    window.peer.onicecandidate = (e) => {
+      if (e.candidate) {
+        // rtcType参数默认是对端值为answer，如果是发起端，会将值设置为offer
+        let candidate = {
+          type: 'answer_ice',
+          iceCandidate: e.candidate
+        }
+        let message = {
+          content: JSON.stringify(candidate),
+          type: Constant.MESSAGE_TRANS_TYPE,
+        }
+        sendMessage(message);
+      }
+
+    };
+
+    /**
+     * 当连接成功后，从里面获取语音视频流
+     * @param {包含语音视频流} e
+     */
+    // @ts-ignore
+    window.peer.ontrack = (e) => {
+      if (e && e.streams) {
+
+        if (onlineType === 1) {
+          let remoteVideo = document.getElementById("remoteVideoReceiver");
+          // @ts-ignore
+          remoteVideo.srcObject = e.streams[0];
+        } else {
+          let remoteAudio = document.getElementById("audioPhone");
+          // @ts-ignore
+          remoteAudio.srcObject = e.streams[0];
+        }
+      }
+    };
+  }
+
+
+  /**
+   * 处理webrtc消息，包括获取请求方的offer，回应answer等
+   * @param {消息内容}} messagePB
+   */
+  const dealWebRtcMessage = (messagePB:Message) => {
+
+
+    // 设置一些状态 我还不知道干嘛
+    // if (messagePB.contentType >= Constant.DIAL_MEDIA_START && messagePB.contentType <= Constant.DIAL_MEDIA_END) {
+    //   this.dealMediaCall(messagePB);
+    //   return;
+    // }
+
+
+    const {type, sdp, iceCandidate} = JSON.parse(messagePB.content);
+
+
+    console.log(type, sdp, iceCandidate)
+
+    /*
+    if (type === "answer") {
+      const answerSdp = new RTCSessionDescription({type, sdp});
+      this.props.peer.localPeer.setRemoteDescription(answerSdp)
+    } else if (type === "answer_ice") {
+      this.props.peer.localPeer.addIceCandidate(iceCandidate)
+    } else if (type === "offer_ice") {
+      window.peer.addIceCandidate(iceCandidate)
+    } else if (type === "offer") {
+      if (!this.checkMediaPermisssion()) {
+        return;
+      }
+      let preview
+
+      let video = false;
+      if (messagePB.contentType === Constant.VIDEO_ONLINE) {
+        preview = document.getElementById("localVideoReceiver");
+        video = true
+        appDispatch(changeOnlineTypeAction(1))
+      } else {
+        preview = document.getElementById("audioPhone");
+        appDispatch(changeOnlineTypeAction(2))
+      }
+
+      navigator.mediaDevices
+        .getUserMedia({
+          audio: true,
+          video: video,
+        }).then((stream) => {
+        preview.srcObject = stream;
+        stream.getTracks().forEach(track => {
+          window.peer.addTrack(track, stream);
+        });
+
+        // 一定注意：需要将该动作，放在这里面，即流获取成功后，再进行answer创建。不然不能获取到流，从而不能播放视频。
+        const offerSdp = new RTCSessionDescription({type, sdp});
+        window.peer.setRemoteDescription(offerSdp)
+          .then(() => {
+            window.peer.createAnswer().then(answer => {
+              window.peer.setLocalDescription(answer)
+
+              let message = {
+                content: JSON.stringify(answer),
+                type: Constant.MESSAGE_TRANS_TYPE,
+                messageType: messagePB.contentType
+              }
+              this.sendMessage(message);
+            })
+          });
+      });
+    }*/
+
+  }
+
+
+
+
   return (
     <div className="zf-chat">
-      <Card title="Inner Card" bordered={false} extra={<MoreOutlined onClick={() => {
+      <Card title={chooseUser.name} bordered={false} extra={<MoreOutlined onClick={() => {
       }}/>} style={{height: "100vh"}}>
 
         {/*消息列表开始*/}
-        <div style={{height: 600, overflow: 'auto', padding: '0 16px'}}>
+        <div  id="scrollableDiv"   ref={listRef} style={{height: 600, overflow: 'auto', padding: '0 16px'}}>
           <InfiniteScroll
-            dataLength={messageList.length}
-            hasMore={messageList.length < 50}
-            loader={<Skeleton avatar paragraph={{rows: 1}} active/>}
-            endMessage={<Divider plain>It is all, nothing more 🤐</Divider>}
-            scrollableTarget="scrollableDiv"
+            dataLength={messageList.length} // 当前列表长度
+            hasMore={false} // 是否还有更多数据
+            loader={<Skeleton avatar paragraph={{ rows: 1 }} active />} // 加载时的 loading 组件
+            scrollableTarget="scrollableDiv" // 滚动的目标元素
+            inverse={true} // 启用反向滚动，即向上滚动加载历史数据
             next={() => {
+              console.log("反方向加载之前的历史数据")
             }}>
+
             <List
               dataSource={messageList}
               renderItem={(item, index) => (
                 <List.Item>
-
                   <List.Item.Meta
                     style={{marginBottom: 10}}
                     className={classNames({
@@ -319,12 +446,13 @@ const Index = memo((props: { router: any }) => {
         {/*消息列表结束*/}
 
         {/*分割线开始*/}
-        <Divider></Divider>
+        <Divider style={{margin:0}}></Divider>
         {/*分割线结束*/}
 
         {/*功能菜单开始*/}
         <Space.Compact block>
           <ChatFile sendMessage={sendMessage} appendImgToPanel={appendImgToPanel} appendMessage={appendMessage}/>
+          <ChatAudio sendMessage={sendMessage} appendImgToPanel={appendImgToPanel} appendMessage={appendMessage}/>
         </Space.Compact>
         {/*功能菜单结束*/}
 

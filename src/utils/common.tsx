@@ -20,3 +20,15 @@ export const getContentByType = (type: number, url: string, content: any) => {
 }
 
 
+/**
+ * 检查摄像头权限
+ */
+export const checkMediaPermission = () => {
+  // @ts-ignore
+  navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia; //获取媒体对象（这里指摄像头）
+
+  if (!navigator || !navigator.mediaDevices) {
+    return false;
+  }
+  return true;
+}

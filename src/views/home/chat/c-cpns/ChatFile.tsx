@@ -18,7 +18,14 @@ const Index = memo((props: {
    * 隐藏真正的文件上传控件，通过按钮模拟点击文件上传控件
    */
   const clickFile = () => {
-    fileInputRef.current?.click();
+    if (fileInputRef.current) {
+      if ("value" in fileInputRef.current) {
+        fileInputRef.current.value = '';
+      } // 清空文件输入框的值
+      if ("click" in fileInputRef.current) {
+        fileInputRef.current.click();
+      }
+    }
   }
 
   /**
@@ -81,12 +88,9 @@ const Index = memo((props: {
 
   return (
     <Tooltip title="上传图片或者文件">
-
       <input type='file' id='file' ref={fileInputRef} onChange={uploadFile} hidden disabled={chooseUser.uuid === ''}/>
       <Button
         onClick={clickFile}
-        shape="circle"
-        style={{marginRight: 10}}
         icon={<FileAddOutlined/>}
         disabled={chooseUser.uuid === ''}
       />

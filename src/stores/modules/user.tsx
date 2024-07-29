@@ -1,8 +1,6 @@
-import {Avatar} from "antd"
-import {ReactNode} from "react"
+import {RootState} from "@/stores";
 import ls from "@/utils/localStorage"
-import {createSlice} from '@reduxjs/toolkit'
-import {BarsOutlined, PoweroffOutlined, TeamOutlined, UserOutlined} from '@ant-design/icons'
+import {createAsyncThunk, createSlice} from '@reduxjs/toolkit'
 
 interface userInfoInterface {
   data?: {
@@ -21,11 +19,6 @@ interface userInfoInterface {
 
 export interface initialStateInterface {
   userInfo: userInfoInterface | null
-  userMenu: {
-    key: string,
-    label: string,
-    icon: ReactNode,
-  }[]
   selectMenuKey: string
   friendsOrGroups: {
     "id": number,
@@ -62,7 +55,7 @@ export interface initialStateInterface {
     localPeer: any,  // WebRTC peer 发起端
     remotePeer: any, // WebRTC peer 接收端
   }
-  onlineType: number, // 在线视频或者音频： 1视频，2音频
+  onlineType: number,      // 收到的电话 1:视频，2:音频
   currentScreen: {
     height: number,
     width: number
@@ -75,33 +68,6 @@ export interface initialStateInterface {
 
 const initialState: initialStateInterface = {
   userInfo: ls.getItem("userInfo") as userInfoInterface,
-  userMenu: [
-    {
-      key: '1',
-      label: '用户名称',
-      icon: <Avatar size={20}>张</Avatar>,
-    },
-    {
-      key: '2',
-      label: '好友',
-      icon: <UserOutlined/>,
-    },
-    {
-      key: '3',
-      label: '群聊',
-      icon: <TeamOutlined/>,
-    },
-    {
-      key: '10',
-      label: '展开',
-      icon: <BarsOutlined/>,
-    },
-    {
-      key: '11',
-      label: '退出',
-      icon: <PoweroffOutlined/>,
-    }
-  ],
   selectMenuKey: '2',
   friendsOrGroups: [],
   chooseUser: {
@@ -139,71 +105,79 @@ const initialState: initialStateInterface = {
 }
 
 /**
+ * 修改消息列表的方法
+ */
+export const changeMessageListActionThunk = createAsyncThunk("changeMessageListActionThunk", (payload: any, {dispatch,getState}) => {
+  const currentState = getState() as RootState;
+  dispatch(changeMessageListAction(
+    [
+      ...currentState.user.messageList,
+      payload,
+    ]
+  ))
+})
+
+
+/**
  * 修改内容的东西
  */
 const ActivationCodeSlice = createSlice({
   name: "verifyCodes",
   initialState,
   reducers: {
-
-
-    changeCallNameAction(state, {payload}) {
-      state.callName = payload
+    changeMediaAction(state, {payload}) {
+      state.media = payload
     },
-    changeFromUserUuidAction(state, {payload}) {
-      state.fromUserUuid = payload
+    changeSocketAction(state, {payload}) {
+      state.socket = payload
     },
     changeUserInfoAction(state, {payload}) {
       ls.setItem("userInfo", payload)
       state.userInfo = payload
     },
-    changeCurrentScreenAction(state, {payload}) {
-      state.currentScreen = payload
-    },
-    changeSocketAction(state, {payload}) {
-      state.socket = payload
+    changeCallNameAction(state, {payload}) {
+      state.callName = payload
     },
     changeOnlineTypeAction(state, {payload}) {
       state.onlineType = payload
     },
-    changeMediaAction(state, {payload}) {
-      state.media = payload
+    changeChooseUserAction(state, {payload}) {
+      state.chooseUser = payload
     },
     changeMessageListAction(state, {payload}) {
       state.messageList = payload
     },
-    changeUserMenuAction(state, {payload}) {
-      state.userMenu = payload
+    changeFromUserUuidAction(state, {payload}) {
+      state.fromUserUuid = payload
+    },
+    changeCurrentScreenAction(state, {payload}) {
+      state.currentScreen = payload
     },
     changeSelectMenuKeyAction(state, {payload}) {
       state.selectMenuKey = payload
     },
-    changeFriendsOrGroupsAction(state, {payload}) {
-      state.friendsOrGroups = payload
-    },
     changeVideoCallModalAction(state, {payload}) {
       state.videoCallModal = payload
     },
-    changeChooseUserAction(state, {payload}) {
-      state.chooseUser = payload
-    }
+    changeFriendsOrGroupsAction(state, {payload}) {
+      state.friendsOrGroups = payload
+    },
   },
 })
 
 export const {
-  changeCallNameAction,
-  changeFromUserUuidAction,
   changeMediaAction,
-  changeCurrentScreenAction,
-  changeMessageListAction,
-  changeUserInfoAction,
   changeSocketAction,
-  changeFriendsOrGroupsAction,
-  changeUserMenuAction,
+  changeCallNameAction,
+  changeUserInfoAction,
   changeOnlineTypeAction,
   changeChooseUserAction,
+  changeMessageListAction,
+  changeFromUserUuidAction,
+  changeCurrentScreenAction,
   changeSelectMenuKeyAction,
-  changeVideoCallModalAction
+  changeVideoCallModalAction,
+  changeFriendsOrGroupsAction,
 } = ActivationCodeSlice.actions
 
 export default ActivationCodeSlice.reducer

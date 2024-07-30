@@ -125,6 +125,9 @@ const ActivationCodeSlice = createSlice({
   name: "verifyCodes",
   initialState,
   reducers: {
+    changePeerAction(state, {payload}){
+      state.peer = payload
+    },
     changeMediaAction(state, {payload}) {
       state.media = payload
     },
@@ -166,6 +169,7 @@ const ActivationCodeSlice = createSlice({
 })
 
 export const {
+  changePeerAction,
   changeMediaAction,
   changeSocketAction,
   changeCallNameAction,

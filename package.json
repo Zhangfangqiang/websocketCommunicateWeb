@@ -42,7 +42,7 @@
   },
   "scripts": {
     "start": "craco start",
-    "build": "export GENERATE_SOURCEMAP=false && craco build && rm -rf /Users/fangzhang/DevEcoStudioProjects/TemperatureHumidity/entry/src/main/resources/rawfile/environment/* && mv ./build/* /Users/fangzhang/DevEcoStudioProjects/TemperatureHumidity/entry/src/main/resources/rawfile/environment",
+    "build": "export GENERATE_SOURCEMAP=false && craco build",
     "test": "craco test",
     "eject": "react-scripts eject"
   },

@@ -90,6 +90,7 @@ const Index = memo((props: {
     <Tooltip title="上传图片或者文件">
       <input type='file' id='file' ref={fileInputRef} onChange={uploadFile} hidden disabled={chooseUser.uuid === ''}/>
       <Button
+        style={{border:"none"}}
         onClick={clickFile}
         icon={<FileAddOutlined/>}
         disabled={chooseUser.uuid === ''}

@@ -108,7 +108,6 @@ export function putUsersAvatar(params: PutUsersAvatarParamsInterface) {
 }
 
 
-
 interface PostGetFriendsOrGroupParamsInterface{
   type:string
 }
@@ -129,6 +128,33 @@ interface postMessagesIndexInterface {
 export function postMessagesIndex(params: postMessagesIndexInterface) {
   return Request.post({
     url: `/messages/index`,
+    data: params
+  })
+}
+
+/**
+ * 查询用户或者
+ */
+interface postSearchForUsersOrGroupsInterface{
+  type:string,
+  name:string
+}
+export function postSearchForUsersOrGroups(params:postSearchForUsersOrGroupsInterface){
+  return Request.post({
+    url: `/users/searchForUsersOrGroups`,
+    data: params
+  })
+}
+
+/**
+ * 添加群
+ */
+interface postAddGroupInterface {
+  group_id: string
+}
+export function postAddGroup(params: postAddGroupInterface) {
+  return Request.post({
+    url: `/users/addGroup`,
     data: params
   })
 }

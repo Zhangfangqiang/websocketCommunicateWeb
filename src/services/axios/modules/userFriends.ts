@@ -15,12 +15,11 @@ export function getUserFriends(params?: getUserFriendsParamsInterface) {
   })
 }
 
-
 /**
  * 添加好友
  */
 interface postUserFriendsParamsInterface {
-  userId:number
+  userId:string
 }
 export function postUserFriends(params: postUserFriendsParamsInterface) {
   return Request.post({
@@ -33,7 +32,16 @@ export function postUserFriends(params: postUserFriendsParamsInterface) {
  * 删除好友
  * @param id
  */
-export function deleteUserFriends(id:number) {
+export function deleteUserFriends(id:number|string) {
   return Request.delete({
     url: `/user_friends/${id}`})
+}
+
+/**
+ * 退出群
+ * @param id
+ */
+export function deleteExitGroup(id:number|string) {
+  return Request.delete({
+    url: `/users/exitGroup/${id}`})
 }

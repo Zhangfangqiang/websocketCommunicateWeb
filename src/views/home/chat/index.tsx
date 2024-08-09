@@ -13,19 +13,23 @@ import ChatFile from "@/views/home/chat/c-cpns/ChatFile";
 import InfiniteScroll from 'react-infinite-scroll-component';
 import {Avatar, Button, Card, Divider, Form, Input, List, Skeleton, Space} from "antd";
 import {
+  changeFriendsOrGroupsAction,
   changeMessageListAction,
   changeMessageListActionThunk,
   changeOnlineTypeAction,
 } from "@/stores/modules/user";
 import ChatAudio from "@/views/home/chat/c-cpns/ChatAudio";
+import {useNotification} from "@/components/NotificationContext";
 
 
 const Index = memo((props: { router: any }) => {
   const [textForm] = Form.useForm();
+  const { api } = useNotification();
   const appDispatch = useAppDispatch()
-  const {chooseUser, messageList, userInfo, onlineType ,peer} = useUserData()
+  const {chooseUser, messageList, userInfo, onlineType ,selectMenuKey,friendsOrGroups} = useUserData()
   const chooseUserRef = useRef(chooseUser);
   const onlineTypeRef = useRef(onlineType);
+  const friendsOrGroupsRef = useRef(friendsOrGroups);
   const listRef = useRef<HTMLDivElement | null>(null);
 
   /*外抛选中用户信息*/
@@ -37,6 +41,11 @@ const Index = memo((props: { router: any }) => {
   useEffect(() => {
     onlineTypeRef.current = onlineType;
   }, [onlineType]);
+
+  /*外抛用户信息*/
+  useEffect(() => {
+    friendsOrGroupsRef.current = friendsOrGroups;
+  }, [friendsOrGroups]);
 
   /*初始化连接*/
   useEffect(() => {
@@ -148,11 +157,22 @@ const Index = memo((props: { router: any }) => {
         }
 
         /*如果该消息不是正在聊天消息，显示未读提醒*/
-        console.log(chooseUser.uuid)
-        console.log(messagePB.from)
-
         if (chooseUser.uuid !== messagePB.from) {
-          // showUnreadMessageDot(messagePB.from);
+
+          /*做一个简单的消息未读, 服务器还要做设置*/
+          let arrData = friendsOrGroupsRef.current.map((item: any) => {
+            if (item.uuid === messagePB.from) {
+              return { ...item, unMessage: item.unMessage + 1 };
+            }
+            return item;
+          });
+
+          appDispatch(changeFriendsOrGroupsAction(arrData))
+
+          api.open({
+            message: '您收到一条新消息',
+            description: messagePB.content,
+          });
           return;
         }
 
@@ -170,12 +190,13 @@ const Index = memo((props: { router: any }) => {
           return;
         }
 
+        console.log("messagePB",messagePB)
         // 文件内容，录制的视频，语音内容
         // @ts-ignore
         appDispatch(
           changeMessageListActionThunk({
             author: messagePB.fromUsername,
-            avatar: "", //用户头像
+            avatar: messagePB.avatar,     //用户头像
             content: <p>{getContentByType(messagePB.contentType, messagePB.url, messagePB.content)}</p>,
             datetime: moment().fromNow(),
           }))
@@ -235,9 +256,10 @@ const Index = memo((props: { router: any }) => {
 
     let data = {
       ...messageData,
-      messageType: 1,               // 消息类型，1.单聊 2.群聊
+      messageType: selectMenuKey ? (parseInt(selectMenuKey) - 1) : 1,               // 消息类型，1.单聊 2.群聊
       fromUsername: userInfo?.data?.name,
       from: userInfo?.data?.uuid,
+      avatar: userInfo?.data?.avatar,
       to: toUser,
     }
 
@@ -334,15 +356,11 @@ const Index = memo((props: { router: any }) => {
     };
   }
 
-
   /**
    * 处理webrtc消息，包括获取请求方的offer，回应answer等
    * @param {消息内容}} messagePB
    */
   const dealWebRtcMessage = (messagePB: Message) => {
-
-
-
     let preview: HTMLVideoElement | HTMLAudioElement | null = null;
     let video = false;
 
@@ -419,7 +437,6 @@ const Index = memo((props: { router: any }) => {
         });
       });
     }
-
   }
 
 
@@ -431,7 +448,7 @@ const Index = memo((props: { router: any }) => {
         {/*消息列表开始*/}
         <div id="scrollableDiv" ref={listRef} style={{height: 600, overflow: 'auto', padding: '0 16px'}}>
           <InfiniteScroll
-            dataLength={messageList.length} // 当前列表长度
+            dataLength={200} // 当前列表长度
             hasMore={false} // 是否还有更多数据
             loader={<Skeleton avatar paragraph={{rows: 1}} active/>} // 加载时的 loading 组件
             scrollableTarget="scrollableDiv" // 滚动的目标元素
@@ -489,7 +506,13 @@ const Index = memo((props: { router: any }) => {
           textForm.resetFields();
         }}>
           <Form.Item name="content">
-            <Input.TextArea rows={7}/>
+            <Input.TextArea rows={7} style={{border:"none"}} onKeyDown={(e) => {
+              // 如果按下的是回车键且没有按住 Shift 键
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // 阻止默认的回车键行为（换行）
+                textForm.submit(); // 提交表单
+              }
+            }} />
           </Form.Item>
           <Form.Item>
             <Space style={{float: "right"}}>
@@ -499,9 +522,7 @@ const Index = memo((props: { router: any }) => {
           </Form.Item>
         </Form>
         {/*表单发送结束*/}
-
       </Card>
-
 
       <div style={{display: "none"}}>
         <audio id="audioPhone" autoPlay controls/>

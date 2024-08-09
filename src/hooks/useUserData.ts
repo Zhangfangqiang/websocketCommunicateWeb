@@ -3,15 +3,16 @@ import {shallowEqual, useSelector} from "react-redux"
 
 const useUserData = () => {
   return useSelector((state: RootState) => ({
-    friendsOrGroups: state.user.friendsOrGroups,
-    userInfo: state.user.userInfo,
-    selectMenuKey: state.user.selectMenuKey,
-    chooseUser: state.user.chooseUser,
-    messageList: state.user.messageList,
-    media: state.user.media,
-    fromUserUuid: state.user.fromUserUuid,
     peer: state.user.peer,
-    onlineType: state.user.onlineType
+    media: state.user.media,
+    userInfo: state.user.userInfo,
+    chooseUser: state.user.chooseUser,
+    onlineType: state.user.onlineType,
+    messageList: state.user.messageList,
+    fromUserUuid: state.user.fromUserUuid,
+    selectMenuKey: state.user.selectMenuKey,
+    friendsOrGroups: state.user.friendsOrGroups,
+    searchForUsersOrGroupsData: state.user.searchForUsersOrGroupsData
   }), shallowEqual)
 }
 export default useUserData

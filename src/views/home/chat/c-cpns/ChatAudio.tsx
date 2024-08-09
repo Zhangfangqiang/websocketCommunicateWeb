@@ -72,6 +72,7 @@ const Index = memo((props: {
   return (
     <Tooltip title="发送语音">
       <Button
+        style={{border:"none"}}
         onMouseDown={startAudio}
         onMouseUp={stopAudio}
         onTouchStart={startAudio}

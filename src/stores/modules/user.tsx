@@ -1,6 +1,7 @@
 import {RootState} from "@/stores";
 import ls from "@/utils/localStorage"
 import {createAsyncThunk, createSlice} from '@reduxjs/toolkit'
+import {postSearchForUsersOrGroups} from "@/services";
 
 interface userInfoInterface {
   data?: {
@@ -18,15 +19,26 @@ interface userInfoInterface {
 }
 
 export interface initialStateInterface {
-  userInfo: userInfoInterface | null
-  selectMenuKey: string
-  friendsOrGroups: {
+  searchForUsersOrGroupsData:{
     "id": number,
     "uuid": string,
     "city": string,
     "introduction": string,
     "avatar": string,
     "name": string,
+    "created_at": string,
+    "updated_at": string,
+    "deleted_at": string
+  }[] | []
+  userInfo: userInfoInterface | null
+  selectMenuKey: string
+  friendsOrGroups: {
+    "id": number,
+    "uuid": string,
+    "introduction": string,
+    "avatar": string,
+    "name": string,
+    "unMessage":number,
     "created_at": string,
     "updated_at": string,
     "deleted_at": string
@@ -67,6 +79,7 @@ export interface initialStateInterface {
 
 
 const initialState: initialStateInterface = {
+  searchForUsersOrGroupsData:[],
   userInfo: ls.getItem("userInfo") as userInfoInterface,
   selectMenuKey: '2',
   friendsOrGroups: [],
@@ -103,6 +116,9 @@ const initialState: initialStateInterface = {
   fromUserUuid: '',
   videoCallModal: false
 }
+
+
+
 
 /**
  * 修改消息列表的方法
@@ -165,6 +181,9 @@ const ActivationCodeSlice = createSlice({
     changeFriendsOrGroupsAction(state, {payload}) {
       state.friendsOrGroups = payload
     },
+    changeSearchForUsersOrGroupsDataAction(state, {payload}){
+      state.searchForUsersOrGroupsData = payload
+    }
   },
 })
 
@@ -182,6 +201,7 @@ export const {
   changeSelectMenuKeyAction,
   changeVideoCallModalAction,
   changeFriendsOrGroupsAction,
+  changeSearchForUsersOrGroupsDataAction,
 } = ActivationCodeSlice.actions
 
 export default ActivationCodeSlice.reducer

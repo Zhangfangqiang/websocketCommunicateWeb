@@ -6,6 +6,7 @@ import {useRoutes} from 'react-router-dom'
 import React, {memo} from 'react'
 
 /* 包里面的组件开始 */
+import 'moment/locale/zh-cn';
 import routes from './router'
 import {useAppDispatch} from "@/stores";
 

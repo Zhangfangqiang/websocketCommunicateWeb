@@ -10,6 +10,7 @@ import {
   PostPasswordResetUsingEmail,
   PostVerifyCodesEmailParamsInterface
 } from "@/services";
+import {Link} from "react-router-dom";
 
 
 const Index = memo((props: { router: any }) => {
@@ -17,6 +18,7 @@ const Index = memo((props: { router: any }) => {
   const {verifyCodesCaptcha} = useVerifyCodesData()
   const appDispatch = useAppDispatch()
   const [findPassSteps, setFindPassSteps] = useState(0)
+  const [email, setEmail] = useState("")
 
   useEffect(() => {
     postVerifyCodesCaptcha().then((res) => {
@@ -56,14 +58,19 @@ const Index = memo((props: { router: any }) => {
             <Form.Item<PostVerifyCodesEmailParamsInterface>
               label="邮箱"
               name="email"
-              rules={[{required: true, message: '请输入邮箱'}, {type: 'email', message: '请输入有效的邮箱格式'}]}>
-              <Input placeholder="请输入邮箱"/>
+              rules={[{required: true, message: '请输入邮箱'}, {
+                type: 'email',
+                message: '请输入有效的邮箱格式'
+              }]}>
+              <Input placeholder="请输入邮箱" onChange={(e)=>{setEmail(e.target.value)}}/>
             </Form.Item>
 
             <Form.Item
               label="图片验证码"
               name="captcha_answer"
-              rules={[{required: true, message: '请输入验证码'}]}>
+              rules={[{required: true, message: '请输入验证码'},
+                {pattern: /^\d{6}$/, message: '请输入6位数字'}
+              ]}>
               <Space>
                 <Input name="captcha_answer" style={{width: "240px"}} placeholder="请输入验证码"/>
                 <div onClick={() => {
@@ -71,7 +78,7 @@ const Index = memo((props: { router: any }) => {
                     appDispatch(changeVerifyCodesCaptchaAction(res))
                   })
                 }}>
-                  <img src={verifyCodesCaptcha.captcha_image} style={{height: 40}} alt=""/>
+                  <img src={verifyCodesCaptcha.captcha_image} style={{height: 40, cursor: 'pointer'}} alt=""/>
                 </div>
               </Space>
             </Form.Item>
@@ -81,6 +88,11 @@ const Index = memo((props: { router: any }) => {
                 发送邮件
               </Button>
             </Form.Item>
+
+            <div style={{display: "flex", flexFlow: "nowrap row", justifyContent: "space-between"}}>
+              <Link to="/signup">注册账号</Link>
+              <Link to="/login">立即登录</Link>
+            </div>
           </Form>}
         {/*步骤1结束*/}
 
@@ -91,6 +103,7 @@ const Index = memo((props: { router: any }) => {
             layout={"vertical"}
             style={{maxWidth: 360}}
             initialValues={{remember: true}}
+            defaultValue={email}
             onFinish={(v) => {
               PostPasswordResetUsingEmail(v).then(res => {
                 setFindPassSteps(2)
@@ -98,18 +111,20 @@ const Index = memo((props: { router: any }) => {
               })
             }}
             autoComplete="off">
-
             <Form.Item<PostVerifyCodesEmailParamsInterface>
               label="邮箱"
               name="email"
-              rules={[{required: true, message: '请输入邮箱'}, {type: 'email', message: '请输入有效的邮箱格式'}]}>
-              <Input placeholder="请输入邮箱"/>
+              rules={[{required: true, message: '请输入邮箱'}, {
+                type: 'email',
+                message: '请输入有效的邮箱格式'
+              }]}>
+              <Input placeholder="请输入邮箱" defaultValue={email}/>
             </Form.Item>
 
             <Form.Item
               label="邮箱验证码"
               name="verify_code"
-              rules={[{required: true, message: '请输入验证码'}]}>
+              rules={[{required: true, message: '请输入验证码'}, {pattern: /^\d{6}$/, message: '请输入6位数字'}]}>
               <Input placeholder="请输入邮箱验证码"/>
             </Form.Item>
 
@@ -125,12 +140,17 @@ const Index = memo((props: { router: any }) => {
                 修改密码
               </Button>
             </Form.Item>
+            <div style={{display: "flex", flexFlow: "nowrap row", justifyContent: "space-between"}}>
+              <Link to="/signup">注册账号</Link>
+              <Link to="/login">立即登录</Link>
+            </div>
           </Form>}
         {/*步骤2结束*/}
 
         {/*步骤3开始*/}
         {findPassSteps === 2 && <div style={{width: "360px"}}>
-          <img src={require('@/assets/imgs/1.jpeg')} style={{width: "100%", borderRadius: "20px", display: "block"}}/>
+          <img src={require('@/assets/imgs/1.jpeg')}
+               style={{width: "100%", borderRadius: "20px", display: "block"}}/>
           <Button type="text" style={{width: "100%", margin: "15px 0"}}>
             操作成功
           </Button>
@@ -141,7 +161,6 @@ const Index = memo((props: { router: any }) => {
           </Button>
         </div>}
         {/*步骤3结束*/}
-
       </div>
     </div>
   )

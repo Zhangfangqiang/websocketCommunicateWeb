@@ -3,7 +3,7 @@ import {withRouter} from "@/hoc"
 import classNames from "classnames";
 import {Message} from "./proto/message"
 import {useAppDispatch} from "@/stores";
-import {memo, useEffect, useRef} from 'react'
+import {memo, useEffect, useRef, useState} from 'react'
 import useUserData from "@/hooks/useUserData";
 import {MoreOutlined} from "@ant-design/icons";
 import {checkMediaPermission, getContentByType} from "@/utils/common";
@@ -11,7 +11,7 @@ import {WS_BASE_URL} from "@/services/axios/config"
 import * as Constant from '@/common/constant/Constant'
 import ChatFile from "@/views/home/chat/c-cpns/ChatFile";
 import InfiniteScroll from 'react-infinite-scroll-component';
-import {Avatar, Button, Card, Divider, Form, Input, List, Skeleton, Space} from "antd";
+import {Avatar, Button, Card, Divider, Dropdown, Form, Input, List, MenuProps, Skeleton, Space} from "antd";
 import {
   changeFriendsOrGroupsAction,
   changeMessageListAction,
@@ -20,6 +20,7 @@ import {
 } from "@/stores/modules/user";
 import ChatAudio from "@/views/home/chat/c-cpns/ChatAudio";
 import {useNotification} from "@/components/NotificationContext";
+import ChatWindowDetails from "@/views/home/chat/c-cpns/ChatWindowDetails";
 
 
 const Index = memo((props: { router: any }) => {
@@ -31,6 +32,7 @@ const Index = memo((props: { router: any }) => {
   const onlineTypeRef = useRef(onlineType);
   const friendsOrGroupsRef = useRef(friendsOrGroups);
   const listRef = useRef<HTMLDivElement | null>(null);
+  const [chatWindowDetails, setChatWindowDetails] = useState(true)
 
   /*外抛选中用户信息*/
   useEffect(() => {
@@ -309,7 +311,6 @@ const Index = memo((props: { router: any }) => {
     appendMessage(<img src={base64String} alt="" width="150px"/>);
   }
 
-
   /**
    * webrtc 绑定事件
    */
@@ -442,11 +443,12 @@ const Index = memo((props: { router: any }) => {
 
   return (
     <div className="zf-chat">
-      <Card title={chooseUser.name} bordered={false} extra={<MoreOutlined onClick={() => {
-      }}/>} style={{height: "100vh"}}>
+      <Card title={chooseUser.name} bordered={false} extra={<MoreOutlined onClick={()=>{
+        setChatWindowDetails(!chatWindowDetails)
+      }}/>}>
 
         {/*消息列表开始*/}
-        <div id="scrollableDiv" ref={listRef} style={{height: 600, overflow: 'auto', padding: '0 16px'}}>
+        <div id="scrollableDiv" ref={listRef} style={{height: "60vh", overflow: 'auto', padding: '0 16px'}}>
           <InfiniteScroll
             dataLength={200} // 当前列表长度
             hasMore={false} // 是否还有更多数据
@@ -482,11 +484,9 @@ const Index = memo((props: { router: any }) => {
         {/*分割线结束*/}
 
         {/*功能菜单开始*/}
-        <Space.Compact block>
-          <ChatFile sendMessage={sendMessage} appendImgToPanel={appendImgToPanel}
-                    appendMessage={appendMessage}/>
-          <ChatAudio sendMessage={sendMessage} appendImgToPanel={appendImgToPanel}
-                     appendMessage={appendMessage}/>
+        <Space.Compact block style={{marginTop:5,marginBottom:5}}>
+          <ChatFile sendMessage={sendMessage} appendImgToPanel={appendImgToPanel} appendMessage={appendMessage}/>
+          <ChatAudio sendMessage={sendMessage} appendImgToPanel={appendImgToPanel} appendMessage={appendMessage}/>
         </Space.Compact>
         {/*功能菜单结束*/}
 
@@ -506,13 +506,19 @@ const Index = memo((props: { router: any }) => {
           textForm.resetFields();
         }}>
           <Form.Item name="content">
-            <Input.TextArea rows={7} style={{border:"none"}} onKeyDown={(e) => {
-              // 如果按下的是回车键且没有按住 Shift 键
-              if (e.key === 'Enter' && !e.shiftKey) {
-                e.preventDefault(); // 阻止默认的回车键行为（换行）
-                textForm.submit(); // 提交表单
-              }
-            }} />
+            <Input.TextArea
+              rows={7}
+              showCount
+              maxLength={1000}
+              style={{height: "180px", resize: 'none', border: "none"}}
+              onKeyDown={(e) => {
+                // 如果按下的是回车键且没有按住 Shift 键
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault(); // 阻止默认的回车键行为（换行）
+                  textForm.submit(); // 提交表单
+                }
+              }}
+            />
           </Form.Item>
           <Form.Item>
             <Space style={{float: "right"}}>
@@ -523,6 +529,16 @@ const Index = memo((props: { router: any }) => {
         </Form>
         {/*表单发送结束*/}
       </Card>
+
+      {chatWindowDetails &&
+        <ChatWindowDetails></ChatWindowDetails>
+      }
+
+
+
+
+
+
 
       <div style={{display: "none"}}>
         <audio id="audioPhone" autoPlay controls/>

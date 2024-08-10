@@ -6,7 +6,7 @@ import useUserData from "@/hooks/useUserData";
 import {memo, useEffect, useState} from 'react'
 import {getContentByType} from "@/utils/common";
 import {ClockCircleOutlined, SearchOutlined, UserAddOutlined, UserOutlined} from "@ant-design/icons";
-import {Avatar, Badge, Button, Input, List, message, Modal, Popconfirm, Space} from 'antd';
+import {Avatar, Badge, Button, Input, List, message, Modal, Popconfirm, Skeleton, Space} from 'antd';
 import {
   deleteExitGroup,
   deleteUserFriends, postAddGroup,
@@ -20,6 +20,7 @@ import {
   changeMessageListAction,
   changeSearchForUsersOrGroupsDataAction
 } from "@/stores/modules/user";
+import InfiniteScroll from "react-infinite-scroll-component";
 
 const Index = memo((props: { router: any }) => {
   const {friendsOrGroups, chooseUser, selectMenuKey, searchForUsersOrGroupsData} = useUserData()
@@ -34,15 +35,14 @@ const Index = memo((props: { router: any }) => {
     })
   }, []);
 
-
   useEffect(() => {
     if (selectMenuKey === "2" || selectMenuKey === "3") {
       postGetFriendsOrGroup({type: `${parseInt(selectMenuKey) - 1}`}).then(res => {
         appDispatch(changeFriendsOrGroupsAction(res.data))
       })
     }
+    setUserSearchName("")
   }, [selectMenuKey]);
-
 
   useEffect(() => {
     if ((selectMenuKey === "2" || selectMenuKey === "3") && chooseUser.uuid.length > 0) {
@@ -72,28 +72,40 @@ const Index = memo((props: { router: any }) => {
 
   return (
     <div className="zf-friends">
-      <Space.Compact style={{width: '100%'}}>
+      <Space.Compact style={{width: '100%',marginTop:10}}>
         <Input
           onChange={(e) => {
             setUserSearchName(e.target.value);
           }}
+          value={userSearchName}
           placeholder={selectMenuKey === "2" ? "搜索好友" : "搜索群"}
           prefix={<UserOutlined style={{color: 'rgba(0,0,0,.25)'}}/>}
-          suffix={
-            <SearchOutlined style={{color: 'rgba(0,0,0,.45)'}}/>
-          }
+          suffix={<SearchOutlined style={{color: 'rgba(0,0,0,.45)'}}/>}
         />
         <Button onClick={() => {
-          setModalPoP(true)
           if (selectMenuKey === "2" || selectMenuKey === "3") {
+
+            if(userSearchName.length === 0){
+              message.error("请输入搜索条件")
+              return
+            }
+
             postSearchForUsersOrGroups({type: `${parseInt(selectMenuKey) - 1}`, name: userSearchName}).then(res => {
               appDispatch(changeSearchForUsersOrGroupsDataAction(res.data))
+              setModalPoP(true)
             })
           }
         }}><UserAddOutlined/></Button>
       </Space.Compact>
 
-
+      <InfiniteScroll
+        style={{height:"calc(100vh - 50px)"}}
+        dataLength={userSearchName != "" ? friendsOrGroups.filter(item => item.name.toLowerCase().includes(userSearchName.toLowerCase())).length : friendsOrGroups.length} // 当前列表长度
+        hasMore={false} // 是否还有更多数据
+        loader={<Skeleton avatar paragraph={{rows: 1}} active/>} // 加载时的 loading 组件
+        next={() => {
+          console.log("反方向加载之前的历史数据")
+        }}>
       <List
         dataSource={userSearchName != "" ? friendsOrGroups.filter(item => item.name.toLowerCase().includes(userSearchName.toLowerCase())) : friendsOrGroups}
         renderItem={(item) => (
@@ -148,6 +160,7 @@ const Index = memo((props: { router: any }) => {
           </List.Item>
         )}
       />
+      </InfiniteScroll>
 
       {/*添加好友弹框开始*/}
       <Modal title={selectMenuKey === "2" ? "添加好友" : "添加群"} open={modalPoP} onCancel={() => {

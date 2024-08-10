@@ -4,10 +4,10 @@ import {memo, useEffect} from 'react'
 import {Link} from 'react-router-dom'
 import {useAppDispatch} from "@/stores";
 import {Button, Form, Input, Space} from "antd";
+import {changeUserInfoAction} from "@/stores/modules/user";
 import useVerifyCodesData from "@/hooks/useVerifyCodesData";
 import {changeVerifyCodesCaptchaAction} from "@/stores/modules/verifyCodes";
 import {postLoginUsingPassword, PostLoginUsingPasswordParamsInterface, postVerifyCodesCaptcha} from "@/services";
-import {changeUserInfoAction} from "@/stores/modules/user";
 
 const Index = memo((props: { router: any }) => {
   const appDispatch = useAppDispatch()
@@ -58,7 +58,8 @@ const Index = memo((props: { router: any }) => {
             label="图片验证码"
             name="captcha_answer"
             rules={[
-              {required: true, message: '请输入验证码'}
+              {required: true, message: '请输入验证码'},
+              { pattern: /^\d{6}$/, message: '请输入6位数字' }
             ]}
           >
             <Space>
@@ -68,7 +69,7 @@ const Index = memo((props: { router: any }) => {
                   appDispatch(changeVerifyCodesCaptchaAction(res))
                 })
               }}>
-                <img src={verifyCodesCaptcha.captcha_image} style={{height: 40}} alt=""/>
+                <img src={verifyCodesCaptcha.captcha_image} style={{height: 40, cursor: 'pointer'}} alt=""/>
               </div>
             </Space>
           </Form.Item>

@@ -29,7 +29,7 @@ class Request {
             console.error('Bad Request:', err.response.data);
             break;
           case 401:
-            console.error('Unauthorized:', err.response.data);
+            message.error(err.response.data.message)
             break;
           case 403:
             console.error('Forbidden:', err.response.data);
@@ -38,8 +38,6 @@ class Request {
             console.error('Not Found:', err.response.data);
             break;
           case 422:
-
-
             message.error(err.response.data.errors[Object.keys(err.response.data.errors)[0]])
             break;
           case 500:

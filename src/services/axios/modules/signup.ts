@@ -1,6 +1,5 @@
 import Request from "../index"
 
-
 /**
  * 判断手机是否已注册
  */

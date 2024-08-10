@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>WebRTC Example</title>
+</head>
+<body>
+<h1>WebRTC Example</h1>
+
+<video id="localVideo" autoplay muted style="width: 320px; height: 240px;"></video>
+<video id="remoteVideo" autoplay style="width: 320px; height: 240px;"></video>
+
+<button onclick="startCall()">Start Call</button>
+<button onclick="hangUp()">Hang Up</button>
+
+<script src="./proto/message.js"></script>
+<script>
+
+  Message
+
+
+  let localStream;
+  let peerConnection;
+
+  const websocket = new WebSocket('ws://localhost:8081/v1/socket.io?user=11111'); // Replace with your WebSocket server URL
+
+  websocket.onmessage = async (event) => {
+    const message = JSON.parse(event.data);
+    if (message.type === 'offer') {
+      await handleOffer(message);
+    } else if (message.type === 'answer') {
+      await handleAnswer(message);
+    } else if (message.type === 'candidate') {
+      handleCandidate(message);
+    }
+  };
+
+  async function startCall() {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+      localStream = stream;
+      document.getElementById('localVideo').srcObject = stream;
+      peerConnection = new RTCPeerConnection();
+      peerConnection.addEventListener('icecandidate', handleIceCandidate);
+      peerConnection.addEventListener('track', handleRemoteStream);
+
+      localStream.getTracks().forEach(track => peerConnection.addTrack(track, localStream));
+
+      const offer = await peerConnection.createOffer();
+      await peerConnection.setLocalDescription(offer);
+
+      // Message.create(data)
+      websocket.send(JSON.stringify({
+        type: 'offer',
+        sdp: peerConnection.localDescription
+      }));
+
+    } catch (error) {
+      console.error('Error starting call:', error);
+    }
+  }
+
+  async function handleOffer(message) {
+    try {
+      peerConnection = new RTCPeerConnection();
+      peerConnection.addEventListener('icecandidate', handleIceCandidate);
+      peerConnection.addEventListener('track', handleRemoteStream);
+
+      const remoteDesc = new RTCSessionDescription(message.sdp);
+      await peerConnection.setRemoteDescription(remoteDesc);
+
+      const answer = await peerConnection.createAnswer();
+      await peerConnection.setLocalDescription(answer);
+
+      websocket.send(JSON.stringify({
+        type: 'answer',
+        sdp: peerConnection.localDescription
+      }));
+
+    } catch (error) {
+      console.error('Error handling offer:', error);
+    }
+  }
+
+  async function handleAnswer(message) {
+    const remoteDesc = new RTCSessionDescription(message.sdp);
+    await peerConnection.setRemoteDescription(remoteDesc);
+  }
+
+  function handleIceCandidate(event) {
+    if (event.candidate) {
+      websocket.send(JSON.stringify({
+        type: 'candidate',
+        candidate: event.candidate
+      }));
+    }
+  }
+
+  function handleCandidate(message) {
+    const candidate = new RTCIceCandidate(message.candidate);
+    peerConnection.addIceCandidate(candidate);
+  }
+
+  function handleRemoteStream(event) {
+    document.getElementById('remoteVideo').srcObject = event.streams[0];
+  }
+
+  function hangUp() {
+    if (peerConnection) {
+      peerConnection.close();
+    }
+    localStream.getTracks().forEach(track => track.stop());
+    document.getElementById('localVideo').srcObject = null;
+    document.getElementById('remoteVideo').srcObject = null;
+  }
+</script>
+</body>
+</html>

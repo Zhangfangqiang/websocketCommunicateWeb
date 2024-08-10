@@ -11,15 +11,19 @@ import App from './App';                          //根组件
 import store from '@/stores'                      //store数据仓储
 import zhCN from 'antd/locale/zh_CN';             //国际化中文
 import {ConfigProvider} from "antd";
+import {NotificationProvider} from "@/components/NotificationContext";
 
 
 const root = ReactDOM.createRoot(document.getElementById('root') as HTMLElement);
+
 
 root.render(
   <Provider store={store}>
     <HashRouter>
       <ConfigProvider locale={zhCN} theme={{"token": {"colorPrimary": "green", "colorInfo": "green"}}}>
+        <NotificationProvider>
         <App/>
+        </NotificationProvider>
       </ConfigProvider>
     </HashRouter>
   </Provider>

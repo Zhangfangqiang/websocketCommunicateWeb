@@ -12,16 +12,24 @@ import * as Constant from '@/common/constant/Constant'
 import ChatFile from "@/views/home/chat/c-cpns/ChatFile";
 import InfiniteScroll from 'react-infinite-scroll-component';
 import {Avatar, Button, Card, Divider, Form, Input, List, Skeleton, Space} from "antd";
-import {changeMessageListAction, changeMessageListActionThunk, changeOnlineTypeAction} from "@/stores/modules/user";
+import {
+  changeFriendsOrGroupsAction,
+  changeMessageListAction,
+  changeMessageListActionThunk,
+  changeOnlineTypeAction,
+} from "@/stores/modules/user";
 import ChatAudio from "@/views/home/chat/c-cpns/ChatAudio";
+import {useNotification} from "@/components/NotificationContext";
 
 
 const Index = memo((props: { router: any }) => {
   const [textForm] = Form.useForm();
+  const { api } = useNotification();
   const appDispatch = useAppDispatch()
-  const {chooseUser, messageList, userInfo, onlineType} = useUserData()
+  const {chooseUser, messageList, userInfo, onlineType ,selectMenuKey,friendsOrGroups} = useUserData()
   const chooseUserRef = useRef(chooseUser);
   const onlineTypeRef = useRef(onlineType);
+  const friendsOrGroupsRef = useRef(friendsOrGroups);
   const listRef = useRef<HTMLDivElement | null>(null);
 
   /*外抛选中用户信息*/
@@ -33,6 +41,11 @@ const Index = memo((props: { router: any }) => {
   useEffect(() => {
     onlineTypeRef.current = onlineType;
   }, [onlineType]);
+
+  /*外抛用户信息*/
+  useEffect(() => {
+    friendsOrGroupsRef.current = friendsOrGroups;
+  }, [friendsOrGroups]);
 
   /*初始化连接*/
   useEffect(() => {
@@ -144,11 +157,22 @@ const Index = memo((props: { router: any }) => {
         }
 
         /*如果该消息不是正在聊天消息，显示未读提醒*/
-        console.log(chooseUser.uuid)
-        console.log(messagePB.from)
-
         if (chooseUser.uuid !== messagePB.from) {
-          // showUnreadMessageDot(messagePB.from);
+
+          /*做一个简单的消息未读, 服务器还要做设置*/
+          let arrData = friendsOrGroupsRef.current.map((item: any) => {
+            if (item.uuid === messagePB.from) {
+              return { ...item, unMessage: item.unMessage + 1 };
+            }
+            return item;
+          });
+
+          appDispatch(changeFriendsOrGroupsAction(arrData))
+
+          api.open({
+            message: '您收到一条新消息',
+            description: messagePB.content,
+          });
           return;
         }
 
@@ -166,15 +190,16 @@ const Index = memo((props: { router: any }) => {
           return;
         }
 
+        console.log("messagePB",messagePB)
         // 文件内容，录制的视频，语音内容
         // @ts-ignore
         appDispatch(
-            changeMessageListActionThunk({
-              author: messagePB.fromUsername,
-              avatar: "", //用户头像
-              content: <p>{getContentByType(messagePB.contentType, messagePB.url, messagePB.content)}</p>,
-              datetime: moment().fromNow(),
-            }))
+          changeMessageListActionThunk({
+            author: messagePB.fromUsername,
+            avatar: messagePB.avatar,     //用户头像
+            content: <p>{getContentByType(messagePB.contentType, messagePB.url, messagePB.content)}</p>,
+            datetime: moment().fromNow(),
+          }))
       })
     }
 
@@ -231,9 +256,10 @@ const Index = memo((props: { router: any }) => {
 
     let data = {
       ...messageData,
-      messageType: 1,               // 消息类型，1.单聊 2.群聊
+      messageType: selectMenuKey ? (parseInt(selectMenuKey) - 1) : 1,               // 消息类型，1.单聊 2.群聊
       fromUsername: userInfo?.data?.name,
       from: userInfo?.data?.uuid,
+      avatar: userInfo?.data?.avatar,
       to: toUser,
     }
 
@@ -252,15 +278,15 @@ const Index = memo((props: { router: any }) => {
   const appendMessage = (content: any) => {
 
     appDispatch(changeMessageListAction(
-        [
-          ...messageList,
-          {
-            author: userInfo?.data?.name,
-            avatar: userInfo?.data?.avatar,
-            datetime: moment().fromNow(),
-            content: <p>{content}</p>,
-          },
-        ]
+      [
+        ...messageList,
+        {
+          author: userInfo?.data?.name,
+          avatar: userInfo?.data?.avatar,
+          datetime: moment().fromNow(),
+          content: <p>{content}</p>,
+        },
+      ]
     ))
   }
 
@@ -330,36 +356,28 @@ const Index = memo((props: { router: any }) => {
     };
   }
 
-
   /**
    * 处理webrtc消息，包括获取请求方的offer，回应answer等
    * @param {消息内容}} messagePB
    */
   const dealWebRtcMessage = (messagePB: Message) => {
-
-
-    // 设置一些状态 我还不知道干嘛， 但是这里走的是视频通话的逻辑
-    if (messagePB.contentType >= Constant.DIAL_MEDIA_START && messagePB.contentType <= Constant.DIAL_MEDIA_END) {
-    //   this.dealMediaCall(messagePB);
-      return;
-    }
-
     let preview: HTMLVideoElement | HTMLAudioElement | null = null;
     let video = false;
 
-    const {type, sdp, iceCandidate} = JSON.parse(messagePB.content);
-    console.log(type, sdp, iceCandidate)
+    const data = JSON.parse(messagePB.content);
 
-    if (type === "answer") {
-      const answerSdp = new RTCSessionDescription({type, sdp});
-      // this.props.peer.localPeer.setRemoteDescription(answerSdp)
-    }
+    //发送
+    // if (data.type === "answer") {
+    // peer.localPeer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type}))
+    // }
+    //发送
+    // if (data.type === "answer_ice") {
+    //   console.log("peer.localPeer",peer.localPeer)
+    // peer.localPeer.addIceCandidate(data.iceCandidate)     //添加 ICE 候选
+    // }
 
-    if (type === "answer_ice") {
-      // this.props.peer.localPeer.addIceCandidate(iceCandidate)
-    }
 
-    if (type === "offer_ice") {
+    if (data.type === "offer_ice") {
       // @ts-ignore
       if (window.peer && window.peer.remoteDescription) {
         // @ts-ignore
@@ -367,144 +385,151 @@ const Index = memo((props: { router: any }) => {
       }
     }
 
-    if (type === "offer") {
+    if (data.type === "offer") {
       if (!checkMediaPermission()) {
         return;
       }
-    }
 
-    if (messagePB.contentType === Constant.VIDEO_ONLINE) {
-      /*视频聊天*/
-      preview = document.getElementById("localVideoReceiver") as HTMLVideoElement;
-      video = true
-      appDispatch(changeOnlineTypeAction(1))
-    } else {
-      /*语音聊天*/
-      preview = document.getElementById("audioPhone") as HTMLAudioElement;
-      appDispatch(changeOnlineTypeAction(2))
-    }
-
-    navigator.mediaDevices.getUserMedia({audio: true, video: video}).then((stream) => {
-      if (!preview) {
-        return;
+      if (messagePB.contentType === Constant.VIDEO_ONLINE) {
+        /*视频聊天*/
+        preview = document.getElementById("localVideoReceiver") as HTMLVideoElement;
+        video = true
+        appDispatch(changeOnlineTypeAction(1))
+      } else {
+        /*语音聊天*/
+        preview = document.getElementById("audioPhone") as HTMLAudioElement;
+        appDispatch(changeOnlineTypeAction(2))
       }
 
-      preview.srcObject = stream;
-
-      stream.getTracks().forEach(track => {
-        // @ts-ignore
-        if (window.peer) {
-          // @ts-ignore
-          window.peer.addTrack(track, stream);
+      navigator.mediaDevices.getUserMedia({audio: true, video: video}).then((stream) => {
+        if (!preview) {
+          return;
         }
-      });
 
-      // 一定注意：需要将该动作，放在这里面，即流获取成功后，再进行answer创建。不然不能获取到流，从而不能播放视频。
-      const offerSdp = new RTCSessionDescription({type, sdp});
+        preview.srcObject = stream;
 
-      // @ts-ignore
-      window.peer.setRemoteDescription(offerSdp).then(() => {
-        // @ts-ignore
-        window.peer.createAnswer().then((answer: RTCSessionDescriptionInit) => {
+        stream.getTracks().forEach(track => {
           // @ts-ignore
-          window.peer.setLocalDescription(answer)
-          //发送消息
-          sendMessage({
-            content: JSON.stringify(answer),
-            type: Constant.MESSAGE_TRANS_TYPE,
-            messageType: messagePB.contentType
-          });
-        })
+          if (window.peer) {
+            // @ts-ignore
+            window.peer.addTrack(track, stream);
+          }
+        });
+
+        // 一定注意：需要将该动作，放在这里面，即流获取成功后，再进行answer创建。不然不能获取到流，从而不能播放视频。
+
+        // @ts-ignore
+        window.peer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type})).then(() => {
+          // @ts-ignore
+          window.peer.createAnswer().then((answer: RTCSessionDescriptionInit) => {
+
+            console.log(answer)
+            // @ts-ignore
+            window.peer.setLocalDescription(answer)
+
+            //发送消息
+            sendMessage({
+              content: JSON.stringify(answer),
+              type: Constant.MESSAGE_TRANS_TYPE,
+              messageType: messagePB.contentType
+            });
+          })
+        });
       });
-    });
+    }
   }
 
 
   return (
-      <div className="zf-chat">
-        <Card title={chooseUser.name} bordered={false} extra={<MoreOutlined onClick={() => {
-        }}/>} style={{height: "100vh"}}>
+    <div className="zf-chat">
+      <Card title={chooseUser.name} bordered={false} extra={<MoreOutlined onClick={() => {
+      }}/>} style={{height: "100vh"}}>
 
-          {/*消息列表开始*/}
-          <div id="scrollableDiv" ref={listRef} style={{height: 600, overflow: 'auto', padding: '0 16px'}}>
-            <InfiniteScroll
-                dataLength={messageList.length} // 当前列表长度
-                hasMore={false} // 是否还有更多数据
-                loader={<Skeleton avatar paragraph={{rows: 1}} active/>} // 加载时的 loading 组件
-                scrollableTarget="scrollableDiv" // 滚动的目标元素
-                inverse={true} // 启用反向滚动，即向上滚动加载历史数据
-                next={() => {
-                  console.log("反方向加载之前的历史数据")
-                }}>
+        {/*消息列表开始*/}
+        <div id="scrollableDiv" ref={listRef} style={{height: 600, overflow: 'auto', padding: '0 16px'}}>
+          <InfiniteScroll
+            dataLength={200} // 当前列表长度
+            hasMore={false} // 是否还有更多数据
+            loader={<Skeleton avatar paragraph={{rows: 1}} active/>} // 加载时的 loading 组件
+            scrollableTarget="scrollableDiv" // 滚动的目标元素
+            inverse={true} // 启用反向滚动，即向上滚动加载历史数据
+            next={() => {
+              console.log("反方向加载之前的历史数据")
+            }}>
 
-              <List
-                  dataSource={messageList}
-                  renderItem={(item, index) => (
-                      <List.Item>
-                        <List.Item.Meta
-                            style={{marginBottom: 10}}
-                            className={classNames({
-                              'zf-reverse-list': item.author === userInfo?.data?.name,
-                            })}
-                            avatar={<Avatar src={item.avatar}/>}
-                            title={`${item.author} - ${item.datetime}`}
-                            description={item.content}
-                        />
-                      </List.Item>
-                  )}
-              />
-            </InfiniteScroll>
-          </div>
-          {/*消息列表结束*/}
+            <List
+              dataSource={messageList}
+              renderItem={(item, index) => (
+                <List.Item>
+                  <List.Item.Meta
+                    style={{marginBottom: 10}}
+                    className={classNames({
+                      'zf-reverse-list': item.author === userInfo?.data?.name,
+                    })}
+                    avatar={<Avatar src={item.avatar}/>}
+                    title={`${item.author} - ${item.datetime}`}
+                    description={item.content}
+                  />
+                </List.Item>
+              )}
+            />
+          </InfiniteScroll>
+        </div>
+        {/*消息列表结束*/}
 
-          {/*分割线开始*/}
-          <Divider style={{margin: 0}}></Divider>
-          {/*分割线结束*/}
+        {/*分割线开始*/}
+        <Divider style={{margin: 0}}></Divider>
+        {/*分割线结束*/}
 
-          {/*功能菜单开始*/}
-          <Space.Compact block>
-            <ChatFile sendMessage={sendMessage} appendImgToPanel={appendImgToPanel}
-                      appendMessage={appendMessage}/>
-            <ChatAudio sendMessage={sendMessage} appendImgToPanel={appendImgToPanel}
-                       appendMessage={appendMessage}/>
-          </Space.Compact>
-          {/*功能菜单结束*/}
+        {/*功能菜单开始*/}
+        <Space.Compact block>
+          <ChatFile sendMessage={sendMessage} appendImgToPanel={appendImgToPanel}
+                    appendMessage={appendMessage}/>
+          <ChatAudio sendMessage={sendMessage} appendImgToPanel={appendImgToPanel}
+                     appendMessage={appendMessage}/>
+        </Space.Compact>
+        {/*功能菜单结束*/}
 
-          {/*表单发送开始*/}
-          <Form form={textForm} onFinish={(values) => {
-            if (values.content.length === 0) {
-              return;
-            }
+        {/*表单发送开始*/}
+        <Form form={textForm} onFinish={(values) => {
+          if (values.content.length === 0) {
+            return;
+          }
 
-            let message = {
-              content: values.content,
-              contentType: 1,
-            }
+          let message = {
+            content: values.content,
+            contentType: 1,
+          }
 
-            sendMessage(message)
-            appendMessage(values.content);
-            textForm.resetFields();
-          }}>
-            <Form.Item name="content">
-              <Input.TextArea rows={7}/>
-            </Form.Item>
-            <Form.Item>
-              <Space style={{float: "right"}}>
-                <Button htmlType="reset">清除</Button>
-                <Button type="primary" htmlType="submit">发送</Button>
-              </Space>
-            </Form.Item>
-          </Form>
-          {/*表单发送结束*/}
+          sendMessage(message)
+          appendMessage(values.content);
+          textForm.resetFields();
+        }}>
+          <Form.Item name="content">
+            <Input.TextArea rows={7} style={{border:"none"}} onKeyDown={(e) => {
+              // 如果按下的是回车键且没有按住 Shift 键
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault(); // 阻止默认的回车键行为（换行）
+                textForm.submit(); // 提交表单
+              }
+            }} />
+          </Form.Item>
+          <Form.Item>
+            <Space style={{float: "right"}}>
+              <Button htmlType="reset">清除</Button>
+              <Button type="primary" htmlType="submit">发送</Button>
+            </Space>
+          </Form.Item>
+        </Form>
+        {/*表单发送结束*/}
+      </Card>
 
-        </Card>
-
-        <div style={{display:"none"}}>
+      <div style={{display: "none"}}>
         <audio id="audioPhone" autoPlay controls/>
         <video id="remoteVideoReceiver" width="700px" height="auto" autoPlay muted controls/>
-        </div>
-
       </div>
+
+    </div>
   );
 });
 

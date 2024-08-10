@@ -35,10 +35,12 @@ class Request {
             console.error('Forbidden:', err.response.data);
             break;
           case 404:
+            message.error(err.response.data.message)
             console.error('Not Found:', err.response.data);
             break;
           case 422:
             message.error(err.response.data.errors[Object.keys(err.response.data.errors)[0]])
+            console.error(err.response.data)
             break;
           case 500:
             console.error('Internal Server Error:', err.response.data);

@@ -1,8 +1,8 @@
 import "./style.scss"
 import {withRouter} from "@/hoc"
-import {memo, useEffect} from 'react'
+import {memo, useEffect, useState} from 'react'
 import {useAppDispatch} from "@/stores";
-import {Button, Form, Input, Space} from "antd";
+import {Button, Form, Input, message, Space} from "antd";
 import useVerifyCodesData from "@/hooks/useVerifyCodesData";
 import {changeVerifyCodesCaptchaAction} from "@/stores/modules/verifyCodes";
 import {
@@ -19,12 +19,24 @@ const Index = memo((props: { router: any }) => {
   const {verifyCodesCaptcha} = useVerifyCodesData()
   const appDispatch = useAppDispatch()
   const [form] = Form.useForm<PostSignupUsingEmailParamsInterface>();
-
+  const [countdown, setCountdown] = useState(0)
+  
+  
   useEffect(() => {
     postVerifyCodesCaptcha().then((res) => {
       appDispatch(changeVerifyCodesCaptchaAction(res))
     })
   }, [])
+
+  useEffect(() => {
+    if (countdown > 0) {
+      const timerId = setTimeout(() => {
+        setCountdown(prevCountdown => prevCountdown - 1);
+      }, 1000);
+
+      return () => clearTimeout(timerId); // 清理计时器
+    }
+  }, [countdown]);
 
   return (
     <div className="zf-auth-signup-page auth-public-style">
@@ -69,7 +81,8 @@ const Index = memo((props: { router: any }) => {
             label="图片验证码"
             name="captcha_answer"
             rules={[
-              {required: true, message: '请输入验证码'}
+              {required: true, message: '请输入验证码'},
+              {pattern: /^\d{6}$/, message: '请输入6位数字'}
             ]}
           >
             <Space>
@@ -79,7 +92,7 @@ const Index = memo((props: { router: any }) => {
                   appDispatch(changeVerifyCodesCaptchaAction(res))
                 })
               }}>
-                <img src={verifyCodesCaptcha.captcha_image} style={{height: 40}} alt=""/>
+                <img src={verifyCodesCaptcha.captcha_image} style={{height: 40, cursor: 'pointer'}} alt=""/>
               </div>
             </Space>
           </Form.Item>
@@ -88,20 +101,45 @@ const Index = memo((props: { router: any }) => {
           <Form.Item label="邮件验证码"
                      name="verify_code"
                      rules={[
-                       {required: true, message: '请输入邮件验证码'}
+                       {required: true, message: '请输入邮件验证码'},
+                       {pattern: /^\d{6}$/, message: '请输入6位数字'}
                      ]}
           >
             <Space>
               <Input style={{width: "240px"}} placeholder="请输入邮件验证码"/>
               <Button style={{width: "120px", fontSize: 14}} onClick={() => {
-                postVerifyCodesEmail(
-                  {
-                    email: form.getFieldValue("email"),
+                if (countdown === 0) {
+                  let email = form.getFieldValue("email")
+                  let captchaAnswer = form.getFieldValue("captcha_answer")
+
+                  if (!email) {
+                    message.error("请填写邮箱")
+                    return
+                  }
+                  if (!/^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/.test(email.toLowerCase())) {
+                    message.error("请填写邮箱")
+                    return
+                  }
+                  if (!captchaAnswer) {
+                    message.error("请填写图片验证码后在发送验证邮件")
+                    return
+                  }
+                  if (captchaAnswer.length !== 6) {
+                    message.error("请填写图片验证码后在发送验证邮件")
+                    return
+                  }
+                  setCountdown(60)
+
+                  postVerifyCodesEmail({
+                    email: email,
                     captcha_id: verifyCodesCaptcha.captcha_id,
-                    captcha_answer: form.getFieldValue("captcha_answer"),
-                  } as PostVerifyCodesEmailParamsInterface
-                )
-              }}>发送邮件</Button>
+                    captcha_answer: captchaAnswer,
+                  } as PostVerifyCodesEmailParamsInterface).then(() => {
+                    setCountdown(0)
+                    message.success("邮件发送成功")
+                  })
+                }
+              }}>{countdown === 0 ? "发送邮件" : countdown} </Button>
             </Space>
           </Form.Item>
 

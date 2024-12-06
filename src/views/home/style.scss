@@ -12,7 +12,7 @@
     border-right: 1px solid #f0f0f0;
     height: 100vh;
     overflow-y: scroll;
-    padding: 10px;
+    padding: 0 10px  0 10px;
 
     .ant-list-item-meta-description {
       width: 100%;
@@ -28,7 +28,34 @@
 
   .zf-chat {
     flex: 1;
+    display: flex;
+    >div:nth-child(1){
+      flex: 1;
+    }
+    >div:nth-child(2) {
+      flex: .3;
+    }
 
+
+
+    textarea{
+      box-shadow:none !important;
+      padding: 0;
+    }
+    .ant-input-outlined:focus{
+      box-shadow:none !important;
+    }
+    .ant-input-outlined:focus-within{
+      box-shadow:none !important;
+    }
+
+    .ant-card{
+      box-shadow:none;
+    }
+    .ant-card-body {
+      padding-top: 0px;
+      padding-bottom: 0px;
+    }
     .ant-list-item {
       border: none !important;
     }
@@ -39,6 +66,10 @@
         margin-left: 16px;
         margin-right: 0;
       }
+    }
+    .zf-chat-window-details{
+      border-left:  1px solid #f0f0f0 ;
+      padding: 20px;
     }
   }
 
@@ -52,10 +83,6 @@
   > div:first-child {
     flex: .6;
     overflow: hidden;
-
-    img {
-
-    }
   }
 
   > div:last-child {

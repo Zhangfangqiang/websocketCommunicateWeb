@@ -96,7 +96,7 @@ const Index = memo((props: { router: any }) => {
 
       <List
         dataSource={userSearchName != "" ? friendsOrGroups.filter(item => item.name.toLowerCase().includes(userSearchName.toLowerCase())) : friendsOrGroups}
-        renderItem={(item) => (
+        renderItem={(item, key) => (
           <List.Item key={item.id}
                      className={
                        classNames({
@@ -135,11 +135,20 @@ const Index = memo((props: { router: any }) => {
                        >
                          <Button type="text" size={"small"}>删除</Button>
                        </Popconfirm>,
-                       <Badge status="success" count={item.unMessage === 0 ? '': item.unMessage }/>]}
+
+                       <div style={{minWidth:30}}>
+                         <Badge status="success" count={item.unMessage === 0 ? '' : item.unMessage}/>
+                       </div>
+                     ]}
 
                      onClick={() => {
                        /*选择用户列表的信息*/
                        appDispatch(changeChooseUserAction(item))
+
+                       /*未读消息清空*/
+                       const updatedFriendsOrGroups = [...friendsOrGroups];
+                       updatedFriendsOrGroups[key] = {...updatedFriendsOrGroups[key], unMessage: 0};
+                       appDispatch(changeFriendsOrGroupsAction(updatedFriendsOrGroups));
                      }}>
             <List.Item.Meta
               avatar={<Avatar src={item.avatar}/>}

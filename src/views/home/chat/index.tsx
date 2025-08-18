@@ -16,11 +16,9 @@ import {
   Button,
   Card,
   Divider,
-  Dropdown,
   Form,
   Input,
   List,
-  MenuProps,
   Skeleton,
   Space,
   Modal,
@@ -39,7 +37,7 @@ import {useNotification} from "@/components/NotificationContext";
 import ChatWindowDetails from "@/views/home/chat/c-cpns/ChatWindowDetails";
 
 
-const Index = memo((props: { router: any }) => {
+const Index = memo((_props: { router: any }) => {
   const [textForm] = Form.useForm();
   const { api } = useNotification();
   const appDispatch = useAppDispatch()
@@ -68,6 +66,7 @@ const Index = memo((props: { router: any }) => {
   /*初始化连接*/
   useEffect(() => {
     connection()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   /*监听消息列表*/
@@ -84,12 +83,11 @@ const Index = memo((props: { router: any }) => {
    */
   const heartCheck = {
     timeout: 10000,
-    timeoutObj: null,
-    serverTimeoutObj: null,
+    timeoutObj: null as any,
+    serverTimeoutObj: null as any,
     num: 3,
     start: function () {
-      var self = this;
-      var _num = this.num
+      let _num = heartCheck.num
 
       /*清除之前的定时器*/
       // @ts-ignore
@@ -99,7 +97,7 @@ const Index = memo((props: { router: any }) => {
 
       /*设置客户端心跳检测定时器*/
       // @ts-ignore
-      this.timeoutObj = setTimeout(function () {
+      heartCheck.timeoutObj = setTimeout(function () {
 
         /*发送心跳消息*/
         let data = {
@@ -115,15 +113,15 @@ const Index = memo((props: { router: any }) => {
           window.socket.send(Message.encode(messagePB).finish())
         }
         // @ts-ignore
-        self.serverTimeoutObj = setTimeout(function () {
+        heartCheck.serverTimeoutObj = setTimeout(function () {
           _num--
           if (_num <= 0) {
             console.log("the ping num is more then 3, close socket!")
             // @ts-ignore
             window.socket.close();   // WebSocket 连接状态为 OPEN
           }
-        }, self.timeout);
-      }, this.timeout)
+        }, heartCheck.timeout);
+      }, heartCheck.timeout)
     }
   }
 
@@ -217,7 +215,7 @@ const Index = memo((props: { router: any }) => {
           changeMessageListActionThunk({
             author: messagePB.fromUsername,
             avatar: messagePB.avatar,     //用户头像
-            content: <p>{getContentByType(messagePB.contentType, messagePB.url, messagePB.content)}</p>,
+            content: getContentByType(messagePB.contentType, messagePB.url, messagePB.content),
             datetime: moment().fromNow(),
           }))
       })
@@ -296,6 +294,7 @@ const Index = memo((props: { router: any }) => {
    * @param {消息内容，包括图片视频消息标签} content
    */
   const appendMessage = (content: any) => {
+    const normalized = getContentByType(1, '', content);
 
     appDispatch(changeMessageListAction(
       [
@@ -304,7 +303,7 @@ const Index = memo((props: { router: any }) => {
           author: userInfo?.data?.name,
           avatar: userInfo?.data?.avatar,
           datetime: moment().fromNow(),
-          content: <p>{content}</p>,
+          content: normalized,
         },
       ]
     ))
@@ -393,22 +392,27 @@ const Index = memo((props: { router: any }) => {
     //发送
     if (data.type === "answer") {
       // @ts-ignore
-      window.peer.localPeer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type}))
+      if (window.peer) {
+        // @ts-ignore
+        window.peer.setRemoteDescription(new RTCSessionDescription({ sdp: data.sdp, type: data.type }))
+      }
     }
 
     //发送
     if (data.type === "answer_ice") {
       // @ts-ignore
-      console.log("peer.localPeer",window.peer.localPeer)
-      // @ts-ignore
-      window.peer.localPeer.addIceCandidate(data.iceCandidate)     //添加 ICE 候选
+      if (window.peer) {
+        // @ts-ignore
+        window.peer.addIceCandidate(new RTCIceCandidate(data.iceCandidate))     //添加 ICE 候选
+      }
     }
 
     if (data.type === "offer_ice") {
+      // 对端为发起者时收到其 ICE 候选
       // @ts-ignore
-      if (window.peer && window.peer.remoteDescription) {
+      if (window.peer) {
         // @ts-ignore
-        window.peer.addIceCandidate(iceCandidate);
+        window.peer.addIceCandidate(new RTCIceCandidate(data.iceCandidate));
       }
     }
 
@@ -486,7 +490,7 @@ const Index = memo((props: { router: any }) => {
 
     if (message.contentType === Constant.REJECT_AUDIO_ONLINE || message.contentType === Constant.REJECT_VIDEO_ONLINE) {
       let media = {
-        _media,
+        ..._media,
         mediaReject: true,
       }
       appDispatch(changeMediaAction(media))
@@ -495,7 +499,7 @@ const Index = memo((props: { router: any }) => {
 
     if (message.contentType === Constant.ACCEPT_VIDEO_ONLINE || message.contentType === Constant.ACCEPT_AUDIO_ONLINE) {
       let media = {
-        _media,
+        ..._media,
         mediaConnected: true,
       }
       appDispatch(changeMediaAction(media))
@@ -594,7 +598,7 @@ const Index = memo((props: { router: any }) => {
 
             <List
               dataSource={messageList}
-              renderItem={(item, index) => (
+              renderItem={(item) => (
                 <List.Item>
                   <List.Item.Meta
                     style={{marginBottom: 10}}
@@ -666,10 +670,9 @@ const Index = memo((props: { router: any }) => {
 
       {chatWindowDetails && <ChatWindowDetails></ChatWindowDetails>}
 
-
       <Modal
         title="视频电话"
-        visible={videoCallModal}
+        open={videoCallModal}
         onOk={handleOk}
         onCancel={handleCancel}
         okText="接听"
@@ -678,10 +681,7 @@ const Index = memo((props: { router: any }) => {
         <p>{callName}来电</p>
       </Modal>
 
-
-
-      <Drawer width='820px' forceRender={true} title="媒体面板" placement="right"
-              onClose={mediaPanelDrawerOnClose} visible={_media.showMediaPanel}>
+      <Drawer width='820px' forceRender={true} title="媒体面板" placement="right" onClose={mediaPanelDrawerOnClose} open={_media.showMediaPanel}>
         <Tooltip title="结束视频语音">
           <Button
             shape="circle"
@@ -699,11 +699,6 @@ const Index = memo((props: { router: any }) => {
         <audio id="audioPhone" autoPlay controls/>
       </Drawer>
 
-
-      <div style={{display: "none"}}>
-        <audio id="audioPhone" autoPlay controls/>
-        <video id="remoteVideoReceiver" width="700px" height="auto" autoPlay muted controls/>
-      </div>
 
     </div>
   );

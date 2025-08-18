@@ -1,5 +1,6 @@
 import {FileOutlined} from '@ant-design/icons';
-import {BASE_URL, WS_BASE_URL} from "@/services/axios/config"
+import { isValidElement } from 'react';
+import {BASE_URL} from "@/services/axios/config"
 
 /**
  * 根据文件类型渲染对应的标签，比如视频，图片等。
@@ -16,7 +17,14 @@ export const getContentByType = (type: number, url: string, content: any) => {
     content = <video src={BASE_URL + "/" + url} controls autoPlay={false} preload="auto" width='200px'/>
   }
 
-  return content;
+  // 确保返回的是可渲染的 ReactNode，避免把原始对象直接渲染
+  if (isValidElement(content)) return content;
+  if (typeof content === 'string' || typeof content === 'number') return content;
+  try {
+    return JSON.stringify(content);
+  } catch {
+    return String(content);
+  }
 }
 
 

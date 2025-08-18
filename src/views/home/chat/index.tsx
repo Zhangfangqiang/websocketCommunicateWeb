@@ -171,6 +171,8 @@ const Index = memo((props: { router: any }) => {
 
           appDispatch(changeFriendsOrGroupsAction(arrData))
 
+          console.log('999999999999999')
+          console.log( messagePB.content)
           api.open({
             message: '您收到一条新消息',
             description: messagePB.content,

@@ -26,31 +26,31 @@ class Request {
       if (err.response) {
         switch (err.response.status) {
           case 400:
-            console.error('Bad Request:', err.response.data);
+            console.log('Bad Request:', err.response.data);
             break;
           case 401:
             message.error(err.response.data.message)
             break;
           case 403:
-            console.error('Forbidden:', err.response.data);
+            console.log('Forbidden:', err.response.data);
             break;
           case 404:
             message.error(err.response.data.message)
-            console.error('Not Found:', err.response.data);
+            console.log('Not Found:', err.response.data);
             break;
           case 422:
             message.error(err.response.data.errors[Object.keys(err.response.data.errors)[0]])
-            console.error(err.response.data)
+            console.log(err.response.data)
             break;
           case 500:
-            console.error('Internal Server Error:', err.response.data);
+            console.log('Internal Server Error:', err.response.data);
             break;
           default:
-            console.error('An error occurred:', err.response.data);
+            console.log('An error occurred:', err.response.data);
         }
       } else {
         // 网络错误或其他未知错误
-        console.error('Network or unknown error:', err.message);
+        console.log('Network or unknown error:', err.message);
       }
 
       return Promise.reject(err);

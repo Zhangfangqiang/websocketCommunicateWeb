@@ -2,7 +2,7 @@ import {withRouter} from "@/hoc";
 import React, {memo, useRef} from 'react';
 import useUserData from "@/hooks/useUserData";
 import {Tooltip, Button, message} from "antd";
-import {FileAddOutlined, FileOutlined} from '@ant-design/icons';
+import {FileAddOutlined} from '@ant-design/icons';
 
 
 const Index = memo((props: {
@@ -77,8 +77,8 @@ const Index = memo((props: {
           //将图片追加到消息列表
           props.appendImgToPanel(file)
         } else {
-          //将图片追加到消息列表
-          props.appendMessage(<FileOutlined style={{fontSize: 38}}/>)
+          //将文件图标追加到消息列表（序列化对象）
+          props.appendMessage({ kind: 'fileIcon' })
         }
       }
     })

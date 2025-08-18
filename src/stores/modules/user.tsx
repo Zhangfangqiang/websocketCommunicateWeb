@@ -1,7 +1,7 @@
 import {RootState} from "@/stores";
 import ls from "@/utils/localStorage"
 import {createAsyncThunk, createSlice} from '@reduxjs/toolkit'
-import {postSearchForUsersOrGroups} from "@/services";
+// import {postSearchForUsersOrGroups} from "@/services";
 
 interface userInfoInterface {
   data?: {
@@ -138,7 +138,7 @@ export const changeMessageListActionThunk = createAsyncThunk("changeMessageListA
  * 修改内容的东西
  */
 const ActivationCodeSlice = createSlice({
-  name: "verifyCodes",
+  name: "user",
   initialState,
   reducers: {
     changePeerAction(state, {payload}){

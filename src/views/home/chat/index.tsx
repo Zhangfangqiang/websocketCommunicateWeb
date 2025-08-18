@@ -5,20 +5,36 @@ import {Message} from "./proto/message"
 import {useAppDispatch} from "@/stores";
 import {memo, useEffect, useRef, useState} from 'react'
 import useUserData from "@/hooks/useUserData";
-import {MoreOutlined} from "@ant-design/icons";
+import {MoreOutlined, PoweroffOutlined} from "@ant-design/icons";
 import {checkMediaPermission, getContentByType} from "@/utils/common";
 import {WS_BASE_URL} from "@/services/axios/config"
 import * as Constant from '@/common/constant/Constant'
 import ChatFile from "@/views/home/chat/c-cpns/ChatFile";
 import InfiniteScroll from 'react-infinite-scroll-component';
-import {Avatar, Button, Card, Divider, Dropdown, Form, Input, List, MenuProps, Skeleton, Space} from "antd";
 import {
-  changeFriendsOrGroupsAction,
+  Avatar,
+  Button,
+  Card,
+  Divider,
+  Dropdown,
+  Form,
+  Input,
+  List,
+  MenuProps,
+  Skeleton,
+  Space,
+  Modal,
+  Drawer, Tooltip
+} from "antd";
+import {
+  changeCallNameAction,
+  changeFriendsOrGroupsAction, changeFromUserUuidAction, changeMediaAction,
   changeMessageListAction,
   changeMessageListActionThunk,
-  changeOnlineTypeAction,
+  changeOnlineTypeAction, changeVideoCallModalAction,
 } from "@/stores/modules/user";
 import ChatAudio from "@/views/home/chat/c-cpns/ChatAudio";
+import ChatVideoOline from "@/views/home/chat/c-cpns/ChatVideoOline";
 import {useNotification} from "@/components/NotificationContext";
 import ChatWindowDetails from "@/views/home/chat/c-cpns/ChatWindowDetails";
 
@@ -27,7 +43,7 @@ const Index = memo((props: { router: any }) => {
   const [textForm] = Form.useForm();
   const { api } = useNotification();
   const appDispatch = useAppDispatch()
-  const {chooseUser, messageList, userInfo, onlineType ,selectMenuKey,friendsOrGroups} = useUserData()
+  const {chooseUser, messageList, userInfo, onlineType, selectMenuKey, friendsOrGroups, media: _media, callName, videoCallModal, fromUserUuid} = useUserData()
   const chooseUserRef = useRef(chooseUser);
   const onlineTypeRef = useRef(onlineType);
   const friendsOrGroupsRef = useRef(friendsOrGroups);
@@ -367,18 +383,26 @@ const Index = memo((props: { router: any }) => {
     let preview: HTMLVideoElement | HTMLAudioElement | null = null;
     let video = false;
 
+    if (messagePB.contentType >= Constant.DIAL_MEDIA_START && messagePB.contentType <= Constant.DIAL_MEDIA_END) {
+      dealMediaCall(messagePB);
+      return;
+    }
+
     const data = JSON.parse(messagePB.content);
 
     //发送
-    // if (data.type === "answer") {
-    // peer.localPeer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type}))
-    // }
-    //发送
-    // if (data.type === "answer_ice") {
-    //   console.log("peer.localPeer",peer.localPeer)
-    // peer.localPeer.addIceCandidate(data.iceCandidate)     //添加 ICE 候选
-    // }
+    if (data.type === "answer") {
+      // @ts-ignore
+      window.peer.localPeer.setRemoteDescription(new RTCSessionDescription({sdp: data.sdp, type: data.type}))
+    }
 
+    //发送
+    if (data.type === "answer_ice") {
+      // @ts-ignore
+      console.log("peer.localPeer",window.peer.localPeer)
+      // @ts-ignore
+      window.peer.localPeer.addIceCandidate(data.iceCandidate)     //添加 ICE 候选
+    }
 
     if (data.type === "offer_ice") {
       // @ts-ignore
@@ -443,6 +467,113 @@ const Index = memo((props: { router: any }) => {
   }
 
 
+  /**
+   * 修改状态
+   * @param message
+   */
+  const dealMediaCall = (message: Message) => {
+    if (message.contentType === Constant.DIAL_AUDIO_ONLINE || message.contentType === Constant.DIAL_VIDEO_ONLINE) {
+      appDispatch(changeFromUserUuidAction(message.from))
+      appDispatch(changeCallNameAction(message.fromUsername))
+      appDispatch(changeVideoCallModalAction(true))
+      return;
+    }
+
+    if (message.contentType === Constant.CANCELL_AUDIO_ONLINE || message.contentType === Constant.CANCELL_VIDEO_ONLINE) {
+      appDispatch(changeVideoCallModalAction(false))
+      return;
+    }
+
+    if (message.contentType === Constant.REJECT_AUDIO_ONLINE || message.contentType === Constant.REJECT_VIDEO_ONLINE) {
+      let media = {
+        _media,
+        mediaReject: true,
+      }
+      appDispatch(changeMediaAction(media))
+      return;
+    }
+
+    if (message.contentType === Constant.ACCEPT_VIDEO_ONLINE || message.contentType === Constant.ACCEPT_AUDIO_ONLINE) {
+      let media = {
+        _media,
+        mediaConnected: true,
+      }
+      appDispatch(changeMediaAction(media))
+    }
+  }
+
+  /**
+   * 接听电话后，发送接听确认消息，显示媒体面板
+   */
+  const handleOk = () => {
+    appDispatch(changeVideoCallModalAction(false))
+
+    let data = {
+      contentType: Constant.ACCEPT_VIDEO_ONLINE,
+      type: Constant.MESSAGE_TRANS_TYPE,
+      toUser: fromUserUuid,
+    }
+
+    sendMessage(data);
+
+    let media = {
+      ..._media,
+      showMediaPanel: true,
+    }
+
+    appDispatch(changeMediaAction(media))
+  }
+
+  /**
+   * 取消视频通话
+   */
+  const handleCancel = () => {
+    let data = {
+      contentType: Constant.REJECT_VIDEO_ONLINE,
+      type: Constant.MESSAGE_TRANS_TYPE,
+    }
+
+    sendMessage(data);
+    appDispatch(changeVideoCallModalAction(false))
+  }
+
+
+  /**
+   * 显示视频或者音频的面板
+   */
+  const mediaPanelDrawerOnClose = () => {
+    let media = {
+      ..._media,
+      showMediaPanel: false,
+    }
+
+    appDispatch(changeMediaAction(media))
+  }
+
+
+  const stopVideoOnline = (): void => {
+    stopTracks(document.getElementById("localVideoReceiver"));
+    stopTracks(document.getElementById("preview"));
+    stopTracks(document.getElementById("audioPhone"));
+  };
+
+  /**
+   * 停止视频电话,屏幕共享
+   */
+  const stopTracks = (element: HTMLElement | null) => {
+    // 只处理 HTMLMediaElement（HTMLVideoElement/HTMLAudioElement）的 srcObject
+    if (element && 'srcObject' in element) {
+      const mediaElement = element as HTMLMediaElement;
+      if (mediaElement.srcObject instanceof MediaStream) {
+        mediaElement.srcObject.getTracks().forEach((track) => track.stop());
+        // 避免内存泄漏
+        mediaElement.srcObject = null;
+      }
+    }
+  };
+
+
+
   return (
     <div className="zf-chat">
       <Card title={chooseUser.name} bordered={false} extra={<MoreOutlined onClick={()=>{
@@ -489,6 +620,7 @@ const Index = memo((props: { router: any }) => {
         <Space.Compact block style={{marginTop:5,marginBottom:5}}>
           <ChatFile sendMessage={sendMessage} appendImgToPanel={appendImgToPanel} appendMessage={appendMessage}/>
           <ChatAudio sendMessage={sendMessage} appendImgToPanel={appendImgToPanel} appendMessage={appendMessage}/>
+          <ChatVideoOline sendMessage={sendMessage} appendImgToPanel={appendImgToPanel} appendMessage={appendMessage}/>
         </Space.Compact>
         {/*功能菜单结束*/}
 
@@ -532,14 +664,40 @@ const Index = memo((props: { router: any }) => {
         {/*表单发送结束*/}
       </Card>
 
-      {chatWindowDetails &&
-        <ChatWindowDetails></ChatWindowDetails>
-      }
+      {chatWindowDetails && <ChatWindowDetails></ChatWindowDetails>}
+
+
+      <Modal
+        title="视频电话"
+        visible={videoCallModal}
+        onOk={handleOk}
+        onCancel={handleCancel}
+        okText="接听"
+        cancelText="挂断"
+      >
+        <p>{callName}来电</p>
+      </Modal>
 
 
 
+      <Drawer width='820px' forceRender={true} title="媒体面板" placement="right"
+              onClose={mediaPanelDrawerOnClose} visible={_media.showMediaPanel}>
+        <Tooltip title="结束视频语音">
+          <Button
+            shape="circle"
+            onClick={stopVideoOnline}
+            style={{marginRight: 10, float: 'right'}}
+            icon={<PoweroffOutlined style={{color: 'red'}}/>}
+          />
+        </Tooltip>
+        <br/>
+        <video id="localVideoReceiver" width="700px" height="auto" autoPlay muted controls/>
+        <video id="remoteVideoReceiver" width="700px" height="auto" autoPlay muted controls/>
 
-
+        <img id="receiver" width={500} height="auto" alt=""/>
+        <canvas id="canvas" width={500} height={500}/>
+        <audio id="audioPhone" autoPlay controls/>
+      </Drawer>
 
 
       <div style={{display: "none"}}>

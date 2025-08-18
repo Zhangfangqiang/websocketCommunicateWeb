@@ -66,7 +66,7 @@ const Index = memo((props: {
       }
     })
 
-    props.appendMessage(<audio src={window.URL.createObjectURL(blob)} controls autoPlay={false} preload="auto" />);
+    props.appendMessage({ kind: 'audio', src: window.URL.createObjectURL(blob) });
   }
 
   return (

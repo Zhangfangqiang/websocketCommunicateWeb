@@ -1,4 +1,4 @@
-import {memo, useEffect, useState} from "react";
+import {memo, useEffect, useRef, useState} from "react";
 import {withRouter} from "@/hoc";
 import useUserData from "@/hooks/useUserData";
 import {Tooltip, Button, Drawer, Modal} from 'antd';
@@ -17,11 +17,11 @@ const Index = memo((props: {
   appendImgToPanel: (data: any) => void,
 }) => {
 
-  let videoIntervalObj: NodeJS.Timer
   let localPeer: RTCPeerConnection | null = null;
 
   const appDispatch = useAppDispatch()
   const {chooseUser, media: _media} = useUserData()
+  const videoIntervalObj = useRef<NodeJS.Timer | null>(null);
 
   const [videoCallModal, setVideoCallModal] = useState(false)
   const [mediaPanelDrawerVisible, setMediaPanelDrawerVisible] = useState(false)
@@ -50,14 +50,17 @@ const Index = memo((props: {
 
     props.sendMessage(data);
 
-    videoIntervalObj = setInterval(() => {
+    videoIntervalObj.current = setInterval(() => {
       props.sendMessage(data);
     }, 3000)
   }
 
 
   const setMediaState = () => {
-    videoIntervalObj && clearInterval(videoIntervalObj);
+    if (videoIntervalObj.current) {
+      clearInterval(videoIntervalObj.current);
+      videoIntervalObj.current = null; // Good practice to nullify after clearing
+    }
 
     setVideoCallModal(false)
 
@@ -87,7 +90,10 @@ const Index = memo((props: {
    * 发送视频数据的方法
    */
   const sendVideoData = () => {
-    videoIntervalObj && clearInterval(videoIntervalObj);
+    if (videoIntervalObj.current) {
+      clearInterval(videoIntervalObj.current);
+      videoIntervalObj.current = null; // Good practice to nullify after clearing
+    }
     const preview = document.getElementById("localPreviewSender") as HTMLVideoElement | null;
     if (!preview) return;
 
@@ -161,7 +167,10 @@ const Index = memo((props: {
     }
     props.sendMessage(data);
 
-    videoIntervalObj && clearInterval(videoIntervalObj);
+    if (videoIntervalObj.current) {
+      clearInterval(videoIntervalObj.current);
+      videoIntervalObj.current = null; // Good practice to nullify after clearing
+    }
   }
 
   /**

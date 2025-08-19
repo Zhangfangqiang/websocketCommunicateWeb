@@ -50,23 +50,7 @@ const Index = memo((props: {
 
     props.sendMessage(data);
 
-
     videoIntervalObj = setInterval(() => {
-      console.log("video call")
-
-      // 对方接受视频
-      if (media && media.mediaConnected) {
-        setMediaState();
-        sendVideoData();
-        return;
-      }
-
-      // 对方拒接
-      if (media && media.mediaReject) {
-        setMediaState();
-        return;
-      }
-
       props.sendMessage(data);
     }, 3000)
   }
@@ -99,7 +83,11 @@ const Index = memo((props: {
   }, [_media.mediaConnected, _media.mediaReject]);
 
 
+  /**
+   * 发送视频数据的方法
+   */
   const sendVideoData = () => {
+    videoIntervalObj && clearInterval(videoIntervalObj);
     const preview = document.getElementById("localPreviewSender") as HTMLVideoElement | null;
     if (!preview) return;
 
@@ -160,6 +148,9 @@ const Index = memo((props: {
 
   }
 
+  /**
+   * 取消呼叫
+   */
   const handleCancel = () => {
 
     setVideoCallModal(false)
@@ -173,6 +164,9 @@ const Index = memo((props: {
     videoIntervalObj && clearInterval(videoIntervalObj);
   }
 
+  /**
+   * 关闭 视频聊天弹框
+   */
   const mediaPanelDrawerOnClose = () => {
     setMediaPanelDrawerVisible(false)
   }
@@ -207,13 +201,13 @@ const Index = memo((props: {
         />
       </Tooltip>
 
+      {/*用于拨打的时候调用开始*/}
       <Drawer width='820px'
               forceRender={true}
               title="媒体面板"
               placement="right"
               onClose={mediaPanelDrawerOnClose}
-              open={mediaPanelDrawerVisible}
-      >
+              open={mediaPanelDrawerVisible}>
         <Tooltip title="结束视频语音">
           <Button
             shape="circle"
@@ -226,6 +220,7 @@ const Index = memo((props: {
         <video id="localPreviewSender" width="700px" height="auto" autoPlay muted controls/>
         <video id="remoteVideoSender" width="700px" height="auto" autoPlay muted controls/>
       </Drawer>
+      {/*用于拨打的时候调用结束*/}
 
       <Modal
         title="视频电话"
